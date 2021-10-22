@@ -19,13 +19,13 @@ import org.springframework.context.annotation.Configuration;
 @Configuration
 public class RenderConfiguration {
 	@Bean
-	public static List<Buffer> sequence(List<FrameBuffer> frames, Pipeline pipeline, VulkanBuffer vbo, List<DescriptorSet> sets, Pool graphics, Model model) {
+	public static List<Buffer> sequence(List<FrameBuffer> frames, Pipeline pipeline, VulkanBuffer vbo, VulkanBuffer index, List<DescriptorSet> sets, Pool graphics, Model model) {
 		// Allocate command for each frame
 		final int count = frames.size();
 		final List<Buffer> buffers = graphics.allocate(count);
 
 		// Create draw command
-		final Command draw = DrawCommand.draw(model.header().count());
+		final Command draw = DrawCommand.of(model);
 
 		// Record render sequence
 		for(int n = 0; n < count; ++n) {
@@ -37,6 +37,7 @@ public class RenderConfiguration {
 					.add(fb.begin())
 					.add(pipeline.bind())
 					.add(vbo.bindVertexBuffer())
+					.add(index.bindIndexBuffer())
 					.add(ds.bind(pipeline.layout()))
 					.add(draw)
 					.add(FrameBuffer.END)

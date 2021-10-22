@@ -30,12 +30,12 @@ class PipelineConfiguration {
 
 	@Bean
 	public Shader vertex() throws IOException {
-		return loader.apply("spv.cube.vert");
+		return loader.apply("spv.chalet.vert");
 	}
 
 	@Bean
 	public Shader fragment() throws IOException {
-		return loader.apply("spv.cube.frag");
+		return loader.apply("spv.chalet.frag");
 	}
 
 	@Bean
@@ -46,7 +46,7 @@ class PipelineConfiguration {
 	}
 
 	@Bean
-	public Pipeline pipeline(RenderPass pass, Swapchain swapchain, Shader vertex, Shader fragment, PipelineLayout layout, Model model) {
+	public Pipeline pipeline(RenderPass pass, Swapchain swapchain, Shader vertex, Shader fragment, PipelineLayout layout, Model.Header model) {
 		final Rectangle viewport = new Rectangle(swapchain.extents());
 		return new Pipeline.Builder()
 				.layout(layout)
@@ -62,10 +62,13 @@ class PipelineConfiguration {
 					.shader(fragment)
 					.build()
 				.input()
-					.add(model.header().layout())
+					.add(model.layout())
 					.build()
 				.assembly()
-					.topology(model.header().primitive())
+					.topology(model.primitive())
+					.build()
+				.depth()
+					.enable(true)
 					.build()
 				.build(dev);
 	}

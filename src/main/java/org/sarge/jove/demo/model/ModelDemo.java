@@ -12,6 +12,7 @@ import org.sarge.jove.platform.desktop.Window;
 import org.sarge.jove.platform.vulkan.core.LogicalDevice;
 import org.sarge.jove.platform.vulkan.core.VulkanBuffer;
 import org.sarge.jove.util.DataSource;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.CommandLineRunner;
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
@@ -23,28 +24,6 @@ public class ModelDemo {
 	@Bean
 	public static DataSource source() {
 		return DataSource.of("./src/main/resources");
-	}
-
-//	@Bean
-//	public static Runnable update(Matrix matrix, VulkanBuffer uniform, ApplicationConfiguration cfg) {
-//		final long period = cfg.getPeriod();
-//		final long start = System.currentTimeMillis();
-//		return () -> {
-//			final long time = System.currentTimeMillis() - start;
-//			final float angle = (time % period) * MathsUtil.TWO_PI / period;
-//			final Matrix h = Matrix.rotation(Vector.Y, angle);
-//			final Matrix v = Matrix.rotation(Vector.X, MathsUtil.toRadians(30));
-//			final Matrix model = h.multiply(v);
-//			final Matrix m = matrix.multiply(model);
-//			uniform.load(m);
-//		};
-//	}
-
-	@Bean
-	public static Runnable update(Matrix matrix, VulkanBuffer uniform) {
-		return () -> {
-			uniform.load(matrix);
-		};
 	}
 
 	@Bean
@@ -60,6 +39,11 @@ public class ModelDemo {
 		public ApplicationLoop(Application app, LogicalDevice dev) {
 			this.app = app;
 			this.dev = dev;
+		}
+
+		@Autowired
+		public void init(Matrix matrix, VulkanBuffer uniform) {
+			uniform.load(matrix);
 		}
 
 		@Override

@@ -11,6 +11,7 @@ import org.sarge.jove.platform.vulkan.memory.AllocationService;
 import org.sarge.jove.platform.vulkan.memory.MemoryProperties;
 import org.sarge.jove.platform.vulkan.render.Swapchain;
 import org.sarge.jove.scene.Projection;
+import org.sarge.jove.util.MathsUtil;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 
@@ -24,20 +25,26 @@ public class CameraConfiguration {
 		// Construct view transform
 		final Matrix trans = new Matrix.Builder()
 				.identity()
-				.column(3, new Point(0, 0, -2))
+				.column(3, new Point(0, -0.5f, -2))
 				.build();
 
 		final Matrix rot = new Matrix.Builder()
 				.identity()
 				.row(0, Vector.X)
-				.row(1, Vector.Y.invert())
+				.row(1, Vector.Y)
 				.row(2, Vector.Z)
 				.build();
 
 		final Matrix view = rot.multiply(trans);
 
+		// TODO - temporary
+		// Construct model transform
+		final Matrix x = Matrix.rotation(Vector.X, MathsUtil.toRadians(90));
+		final Matrix y = Matrix.rotation(Vector.Y, MathsUtil.toRadians(-120));
+		final Matrix model = y.multiply(x);
+
 		// Create matrix
-		return projection.multiply(view);
+		return projection.multiply(view).multiply(model);
 	}
 
 	@Bean
