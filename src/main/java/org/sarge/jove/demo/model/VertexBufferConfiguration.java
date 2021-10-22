@@ -19,7 +19,6 @@ public class VertexBufferConfiguration {
 	@Bean
 	public static Model model(DataSource src) {
 		final var loader = ResourceLoader.of(src, new ModelLoader());
-System.out.println("loader="+loader);
 		return loader.apply("chalet.model");
 	}
 
