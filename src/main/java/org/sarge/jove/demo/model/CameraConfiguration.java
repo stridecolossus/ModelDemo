@@ -10,6 +10,7 @@ import org.sarge.jove.platform.vulkan.core.VulkanBuffer;
 import org.sarge.jove.platform.vulkan.memory.AllocationService;
 import org.sarge.jove.platform.vulkan.memory.MemoryProperties;
 import org.sarge.jove.platform.vulkan.render.Swapchain;
+import org.sarge.jove.scene.Camera;
 import org.sarge.jove.scene.Projection;
 import org.sarge.jove.util.MathsUtil;
 import org.springframework.context.annotation.Bean;
@@ -18,24 +19,16 @@ import org.springframework.context.annotation.Configuration;
 @Configuration
 public class CameraConfiguration {
 	@Bean
-	public static Matrix matrix(Swapchain swapchain) {
+	public static Camera camera() {
+		final Camera cam = new Camera();
+		cam.move(new Point(0, -0.5f, -2));
+		return cam;
+	}
+
+	@Bean
+	public static Matrix matrix(Swapchain swapchain, Camera cam) {
 		// Create perspective projection
 		final Matrix projection = Projection.DEFAULT.matrix(0.1f, 100, swapchain.extents());
-
-		// Construct view transform
-		final Matrix trans = new Matrix.Builder()
-				.identity()
-				.column(3, new Point(0, -0.5f, -2))
-				.build();
-
-		final Matrix rot = new Matrix.Builder()
-				.identity()
-				.row(0, Vector.X)
-				.row(1, Vector.Y)
-				.row(2, Vector.Z)
-				.build();
-
-		final Matrix view = rot.multiply(trans);
 
 		// TODO - temporary
 		// Construct model transform
@@ -44,7 +37,7 @@ public class CameraConfiguration {
 		final Matrix model = y.multiply(x);
 
 		// Create matrix
-		return projection.multiply(view).multiply(model);
+		return projection.multiply(cam.matrix()).multiply(model);
 	}
 
 	@Bean

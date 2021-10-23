@@ -81,7 +81,7 @@ class PresentationConfiguration {
 
 		// Create depth view
 		return new View.Builder(image)
-				.clear(ClearValue.DepthClearValue.DEFAULT)
+				.clear(ClearValue.DEPTH)
 				.build();
 	}
 
