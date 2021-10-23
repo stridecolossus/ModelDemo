@@ -24,6 +24,7 @@ import org.sarge.jove.platform.vulkan.render.Subpass;
 import org.sarge.jove.platform.vulkan.render.Subpass.Reference;
 import org.sarge.jove.platform.vulkan.render.Swapchain;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.stereotype.Component;
@@ -31,46 +32,64 @@ import org.springframework.stereotype.Component;
 @Configuration
 class PresentationConfiguration {
 	@Autowired private LogicalDevice dev;
-	@Autowired private ApplicationConfiguration cfg;
 
 	@Bean
-	public Swapchain swapchain(Surface surface) {
-		return new Swapchain.Builder(dev, surface)
+	public Swapchain swapchain(Surface.Properties props, ApplicationConfiguration cfg) {
+		// Select presentation mode
+		final VkPresentModeKHR mode = props.modes().contains(VkPresentModeKHR.MAILBOX_KHR) ? VkPresentModeKHR.MAILBOX_KHR : Swapchain.DEFAULT_PRESENTATION_MODE;
+
+		// Select SRGB surface format
+		final List<VkSurfaceFormatKHR> formats = props.formats();
+		final VkSurfaceFormatKHR format = formats
+				.stream()
+				.filter(f -> f.format == VkFormat.B8G8R8_UNORM)
+				.filter(f -> f.colorSpace == VkColorSpaceKHR.SRGB_NONLINEAR_KHR)
+				.findAny()
+				.orElse(formats.get(0));
+
+		// Create swapchain
+		return new Swapchain.Builder(dev, props)
 				.count(cfg.getFrameCount())
 				.clear(cfg.getBackground())
-				.mode(VkPresentModeKHR.MAILBOX_KHR)
+				.format(format.format)
+				.space(format.colorSpace)
+				.presentation(mode)
 				.build();
 	}
 
 	@Bean
 	public View depth(Swapchain swapchain, AllocationService allocator) {
+		// Define depth image
 		final ImageDescriptor descriptor = new ImageDescriptor.Builder()
 				.aspect(VkImageAspect.DEPTH)
 				.extents(new ImageExtents(swapchain.extents()))
-				.format(VkFormat.D32_SFLOAT)
+				.format(Image.depth(dev.parent()))
 				.build();
 
+		// Init properties
 		final MemoryProperties<VkImageUsage> props = new MemoryProperties.Builder<VkImageUsage>()
 				.usage(VkImageUsage.DEPTH_STENCIL_ATTACHMENT)
 				.required(VkMemoryProperty.DEVICE_LOCAL)
 				.build();
 
+		// Create depth image
 		final Image image = new Image.Builder()
 				.descriptor(descriptor)
 				.tiling(VkImageTiling.OPTIMAL)
 				.properties(props)
 				.build(dev, allocator);
 
+		// Create depth view
 		return new View.Builder(image)
 				.clear(ClearValue.DepthClearValue.DEFAULT)
 				.build();
 	}
 
 	@Bean
-	public RenderPass pass() {
+	public RenderPass pass(Swapchain swapchain, @Qualifier("depth") View view) {
 		// Create colour attachment
 		final Attachment colour = new Attachment.Builder()
-				.format(Swapchain.DEFAULT_FORMAT)
+				.format(swapchain.format())
 				.load(VkAttachmentLoadOp.CLEAR)
 				.store(VkAttachmentStoreOp.STORE)
 				.finalLayout(VkImageLayout.PRESENT_SRC_KHR)
@@ -78,7 +97,7 @@ class PresentationConfiguration {
 
 		// Create depth-stencil attachment
 		final Attachment depth = new Attachment.Builder()
-				.format(VkFormat.D32_SFLOAT)
+				.format(view.image().descriptor().format())
 				.load(VkAttachmentLoadOp.CLEAR)
 				.finalLayout(VkImageLayout.DEPTH_STENCIL_ATTACHMENT_OPTIMAL)
 				.build();

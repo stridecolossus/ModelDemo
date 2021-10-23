@@ -5,6 +5,7 @@ import org.sarge.jove.common.Handle;
 import org.sarge.jove.platform.desktop.Desktop;
 import org.sarge.jove.platform.desktop.Window;
 import org.sarge.jove.platform.vulkan.core.Instance;
+import org.sarge.jove.platform.vulkan.core.PhysicalDevice;
 import org.sarge.jove.platform.vulkan.core.Surface;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
@@ -34,6 +35,11 @@ class DesktopConfiguration {
 	public static Surface surface(Instance instance, Window window) {
 		final Handle handle = window.surface(instance.handle());
 		return new Surface(handle, instance);
+	}
+
+	@Bean
+	public static Surface.Properties properties(Surface surface, PhysicalDevice dev) {
+		return surface.properties(dev);
 	}
 
 	@Bean

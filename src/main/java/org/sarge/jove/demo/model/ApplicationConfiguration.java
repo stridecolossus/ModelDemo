@@ -10,7 +10,6 @@ public class ApplicationConfiguration {
 	private String title;
 	private int frames;
 	private Colour col = Colour.BLACK;
-	private long period;
 
 	public String getTitle() {
 		return title;

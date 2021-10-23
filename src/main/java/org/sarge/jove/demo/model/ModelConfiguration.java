@@ -23,17 +23,14 @@ public class ModelConfiguration {
 	@Autowired private Pool graphics;
 
 	@Bean
-	public static Model model(DataSource src) {
+	public static Model model(DataSource src) throws Exception {
+//		final var adapter = ResourceLoader.of(src, new ObjectModelLoader());
+//		final Model model = adapter.apply("chalet.obj").iterator().next();
+//		final ModelLoader out = new ModelLoader();
+//		out.write(model, new FileOutputStream("./src/main/resources/chalet.model"));
+
 		final var loader = ResourceLoader.of(src, new ModelLoader());
 		return loader.apply("chalet.model");
-
-//		final var loader = ResourceLoader.of(src, new ObjectModelLoader());
-//		final Model model = loader.apply("chalet.obj").iterator().next();
-//
-//		final ModelLoader out = new ModelLoader();
-//		out.write(model, new FileOutputStream(""));
-//
-//		return model;
 	}
 
 	@Bean
