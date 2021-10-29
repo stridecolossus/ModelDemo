@@ -2,6 +2,7 @@ package org.sarge.jove.demo.model;
 
 import java.util.List;
 
+import org.sarge.jove.control.RenderLoop.Task;
 import org.sarge.jove.model.Model;
 import org.sarge.jove.platform.vulkan.common.Command;
 import org.sarge.jove.platform.vulkan.common.Command.Buffer;
@@ -11,7 +12,7 @@ import org.sarge.jove.platform.vulkan.pipeline.Pipeline;
 import org.sarge.jove.platform.vulkan.render.DescriptorSet;
 import org.sarge.jove.platform.vulkan.render.DrawCommand;
 import org.sarge.jove.platform.vulkan.render.FrameBuffer;
-import org.sarge.jove.platform.vulkan.render.RenderLoop;
+import org.sarge.jove.platform.vulkan.render.RenderTask;
 import org.sarge.jove.platform.vulkan.render.Swapchain;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
@@ -48,7 +49,7 @@ public class RenderConfiguration {
 	}
 
 	@Bean
-	public static Runnable render(Swapchain swapchain, List<Buffer> buffers, Pool presentation, ApplicationConfiguration cfg) {
-		return new RenderLoop(swapchain, cfg.getFrameCount(), buffers::get, presentation.queue());
+	public static Task render(Swapchain swapchain, List<Buffer> buffers, Pool presentation, ApplicationConfiguration cfg) {
+		return new RenderTask(swapchain, cfg.getFrameCount(), buffers::get, presentation.queue());
 	}
 }

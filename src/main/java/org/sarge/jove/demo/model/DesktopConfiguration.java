@@ -2,6 +2,7 @@ package org.sarge.jove.demo.model;
 
 import org.sarge.jove.common.Dimensions;
 import org.sarge.jove.common.Handle;
+import org.sarge.jove.control.RenderLoop.Task;
 import org.sarge.jove.platform.desktop.Desktop;
 import org.sarge.jove.platform.desktop.Window;
 import org.sarge.jove.platform.vulkan.core.Instance;
@@ -43,7 +44,7 @@ class DesktopConfiguration {
 	}
 
 	@Bean
-	public static Runnable poll(Desktop desktop) {
+	public static Task poll(Desktop desktop) {
 		return desktop::poll;
 	}
 }
