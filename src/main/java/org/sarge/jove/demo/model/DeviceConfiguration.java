@@ -4,13 +4,15 @@ import org.sarge.jove.platform.vulkan.VkQueueFlag;
 import org.sarge.jove.platform.vulkan.api.VulkanLibrary;
 import org.sarge.jove.platform.vulkan.common.Command.Pool;
 import org.sarge.jove.platform.vulkan.common.Queue;
-import org.sarge.jove.platform.vulkan.common.ValidationLayer;
 import org.sarge.jove.platform.vulkan.core.Instance;
 import org.sarge.jove.platform.vulkan.core.LogicalDevice;
 import org.sarge.jove.platform.vulkan.core.PhysicalDevice;
 import org.sarge.jove.platform.vulkan.core.PhysicalDevice.Selector;
 import org.sarge.jove.platform.vulkan.core.Surface;
 import org.sarge.jove.platform.vulkan.memory.AllocationService;
+import org.sarge.jove.platform.vulkan.memory.Allocator;
+import org.sarge.jove.platform.vulkan.memory.MemorySelector;
+import org.sarge.jove.platform.vulkan.util.ValidationLayer;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 
@@ -59,7 +61,20 @@ class DeviceConfiguration {
 	}
 
 	@Bean
-	public static AllocationService allocator(LogicalDevice dev) {
-		return AllocationService.pool(dev);
+	public static MemorySelector selector(LogicalDevice dev) {
+		return MemorySelector.create(dev);
+	}
+
+	@Bean
+	public static Allocator allocator(LogicalDevice dev) {
+		final Allocator allocator = Allocator.allocator(dev);
+		// TODO - pagination, pool, expanding
+		//return new PoolAllocator(allocator, Integer.MAX_VALUE);		// TODO
+		return allocator;
+	}
+
+	@Bean
+	public static AllocationService service(MemorySelector selector, Allocator allocator) {
+		return new AllocationService(selector, allocator);
 	}
 }

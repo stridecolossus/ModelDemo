@@ -1,7 +1,6 @@
 package org.sarge.jove.demo.model;
 
 import java.io.IOException;
-import java.util.function.Function;
 
 import org.sarge.jove.common.Rectangle;
 import org.sarge.jove.model.Model;
@@ -9,33 +8,29 @@ import org.sarge.jove.platform.vulkan.VkShaderStage;
 import org.sarge.jove.platform.vulkan.core.LogicalDevice;
 import org.sarge.jove.platform.vulkan.core.Shader;
 import org.sarge.jove.platform.vulkan.pipeline.Pipeline;
+import org.sarge.jove.platform.vulkan.pipeline.PipelineCache;
 import org.sarge.jove.platform.vulkan.pipeline.PipelineLayout;
 import org.sarge.jove.platform.vulkan.render.DescriptorSet;
 import org.sarge.jove.platform.vulkan.render.RenderPass;
 import org.sarge.jove.platform.vulkan.render.Swapchain;
 import org.sarge.jove.util.DataSource;
-import org.sarge.jove.util.ResourceLoader;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 
 @Configuration
 class PipelineConfiguration {
-	private final LogicalDevice dev;
-	private final Function<String, Shader> loader;
+	@Autowired private LogicalDevice dev;
+	@Autowired private DataSource src;
 
-	public PipelineConfiguration(LogicalDevice dev, DataSource src) {
-		this.dev = dev;
-		this.loader = ResourceLoader.of(src, new Shader.Loader(dev));
+	@Bean
+	Shader vertex() throws IOException {
+		return src.load("spv.chalet.vert", new Shader.Loader(dev));
 	}
 
 	@Bean
-	public Shader vertex() throws IOException {
-		return loader.apply("spv.chalet.vert");
-	}
-
-	@Bean
-	public Shader fragment() throws IOException {
-		return loader.apply("spv.chalet.frag");
+	Shader fragment() throws IOException {
+		return src.load("spv.chalet.frag", new Shader.Loader(dev));
 	}
 
 	@Bean
@@ -46,14 +41,52 @@ class PipelineConfiguration {
 	}
 
 	@Bean
-	public Pipeline pipeline(RenderPass pass, Swapchain swapchain, Shader vertex, Shader fragment, PipelineLayout layout, Model.Header model) {
+	PipelineCache cache() throws IOException {
+//		// TODO
+////		return wrapper.src.load(CacheWrapper.FILENAME, null)
+		return PipelineCache.create(dev, null);
+	}
+
+//	@Component
+//	class CacheWrapper {
+//		private static final String FILENAME = "pipeline.cache";
+//
+//		private final DataSource src;
+//
+//		public CacheWrapper(ApplicationConfiguration cfg) throws IOException {
+//			// Create application data folder
+//			final String home = System.getProperty("user.home");
+//			final Path dir = Paths.get(home).resolve("JOVE").resolve(cfg.getTitle());
+//			Files.createDirectories(dir);
+//
+//			// Create pipeline cache file
+//			final Path file = dir.resolve(FILENAME);
+//			if(!Files.exists(file)) {
+//				Files.createFile(file);
+//			}
+//
+//			// Load pipeline cache
+//			this.src = new DataSource(dir);
+////			this.cache = src.load(filename, new PipelineCache.Loader(dev));
+//		}
+//
+//		@PreDestroy
+//		void close() throws IOException {
+//			final var loader = new PipelineCache.Loader(dev);
+//			loader.save(cache, Files.newOutputStream(file));
+//		}
+//	}
+
+	@Bean
+	public Pipeline pipeline(RenderPass pass, Swapchain swapchain, Shader vertex, Shader fragment, PipelineLayout layout, PipelineCache cache, Model.Header model) {
 		final Rectangle viewport = new Rectangle(swapchain.extents());
 		return new Pipeline.Builder()
 				.layout(layout)
+				.cache(cache)
 				.pass(pass)
 				.viewport()
-					.viewport(viewport)
-					.scissor(viewport)
+					.flip(true)
+					.viewport(viewport, true)
 					.build()
 				.shader(VkShaderStage.VERTEX)
 					.shader(vertex)

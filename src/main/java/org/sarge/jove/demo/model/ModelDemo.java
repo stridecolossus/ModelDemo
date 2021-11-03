@@ -7,6 +7,7 @@ import org.apache.commons.lang3.builder.ToStringStyle;
 import org.sarge.jove.control.RenderLoop;
 import org.sarge.jove.control.RenderLoop.Task;
 import org.sarge.jove.platform.vulkan.core.LogicalDevice;
+import org.sarge.jove.platform.vulkan.pipeline.PipelineCache;
 import org.sarge.jove.util.DataSource;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.CommandLineRunner;
@@ -19,7 +20,7 @@ import org.springframework.stereotype.Component;
 public class ModelDemo {
 	@Bean
 	public static DataSource source() {
-		return DataSource.of("./src/main/resources");
+		return new DataSource("./src/main/resources");
 	}
 
 	@Bean
@@ -32,8 +33,13 @@ public class ModelDemo {
 		@Autowired private RenderLoop app;
 		@Autowired private LogicalDevice dev;
 
+		// TODO
+		@Autowired private PipelineCache cache;
+
 		@Override
 		public void run(String... args) throws Exception {
+			System.out.println("cache="+cache.data().length);
+			// TODO
 			app.run();
 			dev.waitIdle();
 		}
@@ -48,3 +54,6 @@ public class ModelDemo {
 				.run(args);
 	}
 }
+
+// https://github.com/SaschaWillems/Vulkan/blob/master/examples/texturecubemap/texturecubemap.cpp
+// https://www.humus.name/

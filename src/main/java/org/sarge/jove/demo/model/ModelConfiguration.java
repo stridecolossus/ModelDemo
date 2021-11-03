@@ -11,7 +11,6 @@ import org.sarge.jove.platform.vulkan.core.VulkanBuffer;
 import org.sarge.jove.platform.vulkan.memory.AllocationService;
 import org.sarge.jove.platform.vulkan.memory.MemoryProperties;
 import org.sarge.jove.util.DataSource;
-import org.sarge.jove.util.ResourceLoader;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
@@ -23,14 +22,13 @@ public class ModelConfiguration {
 	@Autowired private Pool graphics;
 
 	@Bean
-	public static Model model(DataSource src) throws Exception {
+	public static Model model(DataSource src) {
 //		final var adapter = ResourceLoader.of(src, new ObjectModelLoader());
 //		final Model model = adapter.apply("chalet.obj").iterator().next();
 //		final ModelLoader out = new ModelLoader();
 //		out.write(model, new FileOutputStream("./src/main/resources/chalet.model"));
 
-		final var loader = ResourceLoader.of(src, new ModelLoader());
-		return loader.apply("chalet.model");
+		return src.load("chalet.model", new ModelLoader());
 	}
 
 	@Bean

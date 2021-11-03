@@ -20,7 +20,6 @@ import org.sarge.jove.platform.vulkan.pipeline.Barrier;
 import org.sarge.jove.platform.vulkan.render.Sampler;
 import org.sarge.jove.platform.vulkan.util.FormatBuilder;
 import org.sarge.jove.util.DataSource;
-import org.sarge.jove.util.ResourceLoader;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
@@ -37,8 +36,7 @@ public class TextureConfiguration {
 	@Bean
 	public View texture(AllocationService allocator, DataSource src, Pool graphics) throws IOException {
 		// Load texture image
-		final var loader = ResourceLoader.of(src, new ImageData.Loader());
-		final ImageData image = loader.apply("chalet.jpg");
+		final ImageData image = src.load("chalet.jpg", new ImageData.Loader());
 
 		// Determine image format
 		final VkFormat format = FormatBuilder.format(image.layout());
@@ -93,16 +91,16 @@ public class TextureConfiguration {
 
 		// Transition to sampled image
 		new Barrier.Builder()
-			.source(VkPipelineStage.TRANSFER)
-			.destination(VkPipelineStage.FRAGMENT_SHADER)
-			.barrier(texture)
-				.oldLayout(VkImageLayout.TRANSFER_DST_OPTIMAL)
-				.newLayout(VkImageLayout.SHADER_READ_ONLY_OPTIMAL)
-				.source(VkAccess.TRANSFER_WRITE)
-				.destination(VkAccess.SHADER_READ)
+				.source(VkPipelineStage.TRANSFER)
+				.destination(VkPipelineStage.FRAGMENT_SHADER)
+				.barrier(texture)
+					.oldLayout(VkImageLayout.TRANSFER_DST_OPTIMAL)
+					.newLayout(VkImageLayout.SHADER_READ_ONLY_OPTIMAL)
+					.source(VkAccess.TRANSFER_WRITE)
+					.destination(VkAccess.SHADER_READ)
+					.build()
 				.build()
-			.build()
-			.submitAndWait(graphics);
+				.submitAndWait(graphics);
 
 		// Build component mapping for the image
 		final VkComponentMapping mapping = ComponentMappingBuilder.build(image.mapping());

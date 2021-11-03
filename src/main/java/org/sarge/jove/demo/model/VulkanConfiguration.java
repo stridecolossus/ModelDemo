@@ -2,8 +2,8 @@ package org.sarge.jove.demo.model;
 
 import org.sarge.jove.platform.desktop.Desktop;
 import org.sarge.jove.platform.vulkan.api.VulkanLibrary;
-import org.sarge.jove.platform.vulkan.common.ValidationLayer;
 import org.sarge.jove.platform.vulkan.core.Instance;
+import org.sarge.jove.platform.vulkan.util.ValidationLayer;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 
