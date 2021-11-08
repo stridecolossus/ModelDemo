@@ -6,9 +6,10 @@ import org.apache.commons.lang3.builder.ToStringBuilder;
 import org.apache.commons.lang3.builder.ToStringStyle;
 import org.sarge.jove.control.RenderLoop;
 import org.sarge.jove.control.RenderLoop.Task;
+import org.sarge.jove.io.DataSource;
+import org.sarge.jove.io.FileDataSource;
 import org.sarge.jove.platform.vulkan.core.LogicalDevice;
 import org.sarge.jove.platform.vulkan.pipeline.PipelineCache;
-import org.sarge.jove.util.DataSource;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.CommandLineRunner;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
@@ -20,7 +21,7 @@ import org.springframework.stereotype.Component;
 public class ModelDemo {
 	@Bean
 	public static DataSource source() {
-		return new DataSource("./src/main/resources");
+		return new FileDataSource("./src/main/resources");
 	}
 
 	@Bean
@@ -38,7 +39,7 @@ public class ModelDemo {
 
 		@Override
 		public void run(String... args) throws Exception {
-			System.out.println("cache="+cache.data().length);
+			System.out.println("cache="+cache.data().capacity());
 			// TODO
 			app.run();
 			dev.waitIdle();

@@ -4,6 +4,7 @@ import java.io.IOException;
 
 import org.sarge.jove.common.Bufferable;
 import org.sarge.jove.common.ImageData;
+import org.sarge.jove.io.DataSource;
 import org.sarge.jove.platform.vulkan.*;
 import org.sarge.jove.platform.vulkan.common.Command.Pool;
 import org.sarge.jove.platform.vulkan.core.LogicalDevice;
@@ -19,7 +20,6 @@ import org.sarge.jove.platform.vulkan.memory.MemoryProperties;
 import org.sarge.jove.platform.vulkan.pipeline.Barrier;
 import org.sarge.jove.platform.vulkan.render.Sampler;
 import org.sarge.jove.platform.vulkan.util.FormatBuilder;
-import org.sarge.jove.util.DataSource;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
@@ -80,14 +80,15 @@ public class TextureConfiguration {
 		final VulkanBuffer staging = VulkanBuffer.staging(dev, allocator, data);
 
 		// Copy staging to texture
-		new ImageCopyCommand.Builder(texture)
+		new ImageCopyCommand.Builder()
+				.image(texture)
 				.buffer(staging)
 				.layout(VkImageLayout.TRANSFER_DST_OPTIMAL)
 				.build()
 				.submitAndWait(graphics);
 
 		// Release staging
-		staging.close();
+		staging.destroy();
 
 		// Transition to sampled image
 		new Barrier.Builder()

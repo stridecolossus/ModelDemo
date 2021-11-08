@@ -6,6 +6,7 @@ import org.sarge.jove.common.Bufferable;
 import org.sarge.jove.common.Dimensions;
 import org.sarge.jove.common.ImageData;
 import org.sarge.jove.common.Rectangle;
+import org.sarge.jove.io.DataSource;
 import org.sarge.jove.model.CubeBuilder;
 import org.sarge.jove.model.Model;
 import org.sarge.jove.platform.vulkan.*;
@@ -16,6 +17,7 @@ import org.sarge.jove.platform.vulkan.core.VulkanBuffer;
 import org.sarge.jove.platform.vulkan.image.ComponentMappingBuilder;
 import org.sarge.jove.platform.vulkan.image.Image;
 import org.sarge.jove.platform.vulkan.image.ImageCopyCommand;
+import org.sarge.jove.platform.vulkan.image.ImageCopyCommand.CopyRegion;
 import org.sarge.jove.platform.vulkan.image.ImageDescriptor;
 import org.sarge.jove.platform.vulkan.image.ImageExtents;
 import org.sarge.jove.platform.vulkan.image.SubResource;
@@ -29,7 +31,6 @@ import org.sarge.jove.platform.vulkan.render.RenderPass;
 import org.sarge.jove.platform.vulkan.render.Sampler;
 import org.sarge.jove.platform.vulkan.render.Sampler.Wrap;
 import org.sarge.jove.platform.vulkan.render.Swapchain;
-import org.sarge.jove.util.DataSource;
 import org.sarge.jove.util.TextureAtlas;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.annotation.Bean;
@@ -101,32 +102,38 @@ public class SkyBoxConfiguration {
 		// Load cube-map image
 		final ImageData image = src.load(".jpg", new ImageData.Loader());
 
-		// Load cube-map images
-		final TextureAtlas atlas = TextureAtlas.cubemap(new Dimensions(104, 104));
-		final Rectangle[] rectangles = atlas.values().toArray(Rectangle[]::new);
-		for(int n = 0; n < 6; ++n) {
-			// Create staging buffer
-			final Bufferable data = Bufferable.of(image.bytes());
-			final VulkanBuffer staging = VulkanBuffer.staging(dev, allocator, data);
+		// Copy image to staging buffer
+		final Bufferable data = Bufferable.of(image.bytes());
+		final VulkanBuffer staging = VulkanBuffer.staging(dev, allocator, data);
 
+		// Create copy command
+		final var copy = new ImageCopyCommand.Builder()
+				.image(texture)
+				.buffer(staging)
+				.layout(VkImageLayout.TRANSFER_DST_OPTIMAL);
+
+		// Add cube-map copy regions
+		final TextureAtlas atlas = TextureAtlas.cubemap(new Dimensions(104, 104));			// TODO - from image?
+		final Rectangle[] rectangles = atlas.values().toArray(Rectangle[]::new);			// TODO - check values() is also ordered
+		for(int n = 0; n < rectangles.length; ++n) {
 			// Init image sub-resource
 			final SubResource res = new SubResource.Builder(descriptor)
 					.baseArrayLayer(n)
-					.layerCount(1)
 					.build();
 
-			// Copy staging to texture
-			// TODO - rectangles, combine into 6 x copies?
-			new ImageCopyCommand.Builder(texture)
-					.buffer(staging)
-					.layout(VkImageLayout.TRANSFER_DST_OPTIMAL)
+			// Init copy region
+			final CopyRegion region = new CopyRegion.Builder()
+					.region(rectangles[n])
 					.subresource(res)
-					.build()
-					.submitAndWait(graphics);
+					.build();
 
-			// Release staging
-			staging.close();
+			// Add copy region
+			copy.region(region);
 		}
+
+		// Copy staging to texture
+		copy.build().submitAndWait(graphics);
+		staging.destroy();
 
 		// Transition to sampled image
 		new Barrier.Builder()
@@ -158,12 +165,12 @@ public class SkyBoxConfiguration {
 
 	@Bean
 	public Shader skyboxVertex() throws IOException {
-		return src.load("spv.skybox.vert", new Shader.Loader(dev));
+		return src.load("skybox.vert.spv", new Shader.Loader(dev));
 	}
 
 	@Bean
 	public Shader skyboxFragment() throws IOException {
-		return src.load("spv.skybox.frag", new Shader.Loader(dev));
+		return src.load("skybox.frag.spv", new Shader.Loader(dev));
 	}
 
 	@Bean

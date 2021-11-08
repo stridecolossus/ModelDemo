@@ -1,12 +1,12 @@
 package org.sarge.jove.demo.model;
 
 import org.sarge.jove.control.ActionBindings;
-import org.sarge.jove.control.Button;
 import org.sarge.jove.control.RenderLoop;
 import org.sarge.jove.control.RenderLoop.Task;
 import org.sarge.jove.geometry.Matrix;
 import org.sarge.jove.geometry.Rotation;
 import org.sarge.jove.geometry.Vector;
+import org.sarge.jove.platform.desktop.KeyboardDevice;
 import org.sarge.jove.platform.desktop.MouseDevice;
 import org.sarge.jove.platform.desktop.Window;
 import org.sarge.jove.platform.vulkan.VkBufferUsage;
@@ -40,8 +40,8 @@ public class CameraConfiguration {
 	public ActionBindings bindings(Window window, RenderLoop loop) {
 		// Bind stop action
 		final ActionBindings bindings = new ActionBindings();
-		final var keyboard = window.keyboard().source();
-		bindings.bind(new Button("ESCAPE", keyboard), loop::stop);
+		final KeyboardDevice keyboard = window.keyboard();
+		bindings.bind(keyboard.key("ESCAPE"), loop::stop);
 
 		// Bind camera controller
 		final MouseDevice mouse = window.mouse();

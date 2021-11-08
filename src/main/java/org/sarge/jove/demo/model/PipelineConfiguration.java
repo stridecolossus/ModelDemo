@@ -3,6 +3,7 @@ package org.sarge.jove.demo.model;
 import java.io.IOException;
 
 import org.sarge.jove.common.Rectangle;
+import org.sarge.jove.io.DataSource;
 import org.sarge.jove.model.Model;
 import org.sarge.jove.platform.vulkan.VkShaderStage;
 import org.sarge.jove.platform.vulkan.core.LogicalDevice;
@@ -13,7 +14,6 @@ import org.sarge.jove.platform.vulkan.pipeline.PipelineLayout;
 import org.sarge.jove.platform.vulkan.render.DescriptorSet;
 import org.sarge.jove.platform.vulkan.render.RenderPass;
 import org.sarge.jove.platform.vulkan.render.Swapchain;
-import org.sarge.jove.util.DataSource;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
@@ -25,12 +25,12 @@ class PipelineConfiguration {
 
 	@Bean
 	Shader vertex() throws IOException {
-		return src.load("spv.chalet.vert", new Shader.Loader(dev));
+		return src.load("chalet.vert.spv", new Shader.Loader(dev));
 	}
 
 	@Bean
 	Shader fragment() throws IOException {
-		return src.load("spv.chalet.frag", new Shader.Loader(dev));
+		return src.load("chalet.frag.spv", new Shader.Loader(dev));
 	}
 
 	@Bean

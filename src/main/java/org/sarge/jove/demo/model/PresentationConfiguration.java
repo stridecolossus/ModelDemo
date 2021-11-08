@@ -139,7 +139,7 @@ class PresentationConfiguration {
 		@PreDestroy
 		void destroy() {
 			for(FrameBuffer b : buffers) {
-				b.close();
+				b.destroy();
 			}
 		}
 	}

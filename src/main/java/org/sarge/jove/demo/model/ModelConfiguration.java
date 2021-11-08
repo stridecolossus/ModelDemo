@@ -1,6 +1,9 @@
 package org.sarge.jove.demo.model;
 
+import java.io.IOException;
+
 import org.sarge.jove.common.Bufferable;
+import org.sarge.jove.io.DataSource;
 import org.sarge.jove.model.Model;
 import org.sarge.jove.model.ModelLoader;
 import org.sarge.jove.platform.vulkan.VkBufferUsage;
@@ -10,7 +13,6 @@ import org.sarge.jove.platform.vulkan.core.LogicalDevice;
 import org.sarge.jove.platform.vulkan.core.VulkanBuffer;
 import org.sarge.jove.platform.vulkan.memory.AllocationService;
 import org.sarge.jove.platform.vulkan.memory.MemoryProperties;
-import org.sarge.jove.util.DataSource;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
@@ -22,7 +24,7 @@ public class ModelConfiguration {
 	@Autowired private Pool graphics;
 
 	@Bean
-	public static Model model(DataSource src) {
+	public static Model model(DataSource src) throws IOException {
 //		final var adapter = ResourceLoader.of(src, new ObjectModelLoader());
 //		final Model model = adapter.apply("chalet.obj").iterator().next();
 //		final ModelLoader out = new ModelLoader();
@@ -64,7 +66,7 @@ public class ModelConfiguration {
 		staging.copy(buffer).submitAndWait(graphics);
 
 		// Release staging
-		staging.close();
+		staging.destroy();
 
 		return buffer;
 	}

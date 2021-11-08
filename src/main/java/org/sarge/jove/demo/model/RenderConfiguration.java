@@ -2,8 +2,12 @@ package org.sarge.jove.demo.model;
 
 import java.util.List;
 
+import org.sarge.jove.control.FrameCounter;
+import org.sarge.jove.control.FrameThrottle;
+import org.sarge.jove.control.FrameTracker;
 import org.sarge.jove.control.RenderLoop.Task;
 import org.sarge.jove.model.Model;
+import org.sarge.jove.platform.vulkan.VkIndexType;
 import org.sarge.jove.platform.vulkan.common.Command;
 import org.sarge.jove.platform.vulkan.common.Command.Buffer;
 import org.sarge.jove.platform.vulkan.common.Command.Pool;
@@ -38,7 +42,7 @@ public class RenderConfiguration {
 					.add(fb.begin())
 					.add(pipeline.bind())
 					.add(vbo.bindVertexBuffer())
-					.add(index.bindIndexBuffer())
+					.add(index.bindIndexBuffer(VkIndexType.UINT32))
 					.add(ds.bind(pipeline.layout()))
 					.add(draw)
 					.add(FrameBuffer.END)
@@ -51,5 +55,18 @@ public class RenderConfiguration {
 	@Bean
 	public static Task render(Swapchain swapchain, List<Buffer> buffers, Pool presentation, ApplicationConfiguration cfg) {
 		return new RenderTask(swapchain, cfg.getFrameCount(), buffers::get, presentation.queue());
+	}
+
+	@Bean
+	static FrameCounter counter() {
+		return new FrameCounter();
+	}
+
+	@Bean
+	public static Task tracker(FrameCounter counter) {
+		final FrameTracker tracker = new FrameTracker();
+		tracker.add(new FrameThrottle());
+		tracker.add(counter);
+		return tracker;
 	}
 }
