@@ -2,7 +2,6 @@ package org.sarge.jove.demo.model;
 
 import java.io.IOException;
 
-import org.sarge.jove.common.Bufferable;
 import org.sarge.jove.common.Dimensions;
 import org.sarge.jove.common.ImageData;
 import org.sarge.jove.common.Rectangle;
@@ -31,6 +30,7 @@ import org.sarge.jove.platform.vulkan.render.RenderPass;
 import org.sarge.jove.platform.vulkan.render.Sampler;
 import org.sarge.jove.platform.vulkan.render.Sampler.Wrap;
 import org.sarge.jove.platform.vulkan.render.Swapchain;
+import org.sarge.jove.platform.vulkan.util.FormatBuilder;
 import org.sarge.jove.util.TextureAtlas;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.annotation.Bean;
@@ -61,15 +61,18 @@ public class SkyBoxConfiguration {
 
 	@Bean
 	public View cubemap(AllocationService allocator, DataSource src, Pool graphics) throws IOException {
+		// Load cube-map image
+		final ImageData image = src.load("TODO.jpg", new ImageData.Loader());
+
 		// Determine image format
-//		final VkFormat format = FormatBuilder.format(image.layout());
-		final VkFormat format = VkFormat.R8G8B8A8_UNORM;
+		final VkFormat format = FormatBuilder.format(image.layout());
+//		final VkFormat format = VkFormat.R8G8B8A8_UNORM;
 
 		// Create descriptor
 		final ImageDescriptor descriptor = new ImageDescriptor.Builder()
 				.type(VkImageType.IMAGE_TYPE_2D)
 				.aspect(VkImageAspect.COLOR)
-				.extents(new ImageExtents(2048, 2048))
+				.extents(new ImageExtents(image.size()))
 				.format(format)
 				.arrayLayers(6)
 				.build();
@@ -99,12 +102,8 @@ public class SkyBoxConfiguration {
 				.build()
 				.submitAndWait(graphics);
 
-		// Load cube-map image
-		final ImageData image = src.load(".jpg", new ImageData.Loader());
-
 		// Copy image to staging buffer
-		final Bufferable data = Bufferable.of(image.bytes());
-		final VulkanBuffer staging = VulkanBuffer.staging(dev, allocator, data);
+		final VulkanBuffer staging = VulkanBuffer.staging(dev, allocator, image.buffer());
 
 		// Create copy command
 		final var copy = new ImageCopyCommand.Builder()
@@ -113,8 +112,8 @@ public class SkyBoxConfiguration {
 				.layout(VkImageLayout.TRANSFER_DST_OPTIMAL);
 
 		// Add cube-map copy regions
-		final TextureAtlas atlas = TextureAtlas.cubemap(new Dimensions(104, 104));			// TODO - from image?
-		final Rectangle[] rectangles = atlas.values().toArray(Rectangle[]::new);			// TODO - check values() is also ordered
+		final TextureAtlas atlas = TextureAtlas.cubemap(new Dimensions(104, 104));			// TODO - from image
+		final Rectangle[] rectangles = atlas.values().toArray(Rectangle[]::new);
 		for(int n = 0; n < rectangles.length; ++n) {
 			// Init image sub-resource
 			final SubResource res = new SubResource.Builder(descriptor)

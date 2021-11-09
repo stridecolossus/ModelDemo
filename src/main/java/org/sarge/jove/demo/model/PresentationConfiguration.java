@@ -4,8 +4,6 @@ import static java.util.stream.Collectors.toList;
 
 import java.util.List;
 
-import javax.annotation.PreDestroy;
-
 import org.sarge.jove.common.Dimensions;
 import org.sarge.jove.platform.vulkan.*;
 import org.sarge.jove.platform.vulkan.common.ClearValue;
@@ -27,7 +25,6 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
-import org.springframework.stereotype.Component;
 
 @Configuration
 class PresentationConfiguration {
@@ -130,17 +127,5 @@ class PresentationConfiguration {
 				.stream()
 				.map(view -> FrameBuffer.create(pass, extents, List.of(view, depth)))
 				.collect(toList());
-	}
-
-	@Component
-	class ReleaseBuffers {
-		@Autowired private List<FrameBuffer> buffers;
-
-		@PreDestroy
-		void destroy() {
-			for(FrameBuffer b : buffers) {
-				b.destroy();
-			}
-		}
 	}
 }

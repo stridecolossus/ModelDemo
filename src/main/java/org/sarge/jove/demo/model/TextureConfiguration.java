@@ -2,7 +2,6 @@ package org.sarge.jove.demo.model;
 
 import java.io.IOException;
 
-import org.sarge.jove.common.Bufferable;
 import org.sarge.jove.common.ImageData;
 import org.sarge.jove.io.DataSource;
 import org.sarge.jove.platform.vulkan.*;
@@ -12,6 +11,7 @@ import org.sarge.jove.platform.vulkan.core.VulkanBuffer;
 import org.sarge.jove.platform.vulkan.image.ComponentMappingBuilder;
 import org.sarge.jove.platform.vulkan.image.Image;
 import org.sarge.jove.platform.vulkan.image.ImageCopyCommand;
+import org.sarge.jove.platform.vulkan.image.ImageCopyCommand.CopyRegion;
 import org.sarge.jove.platform.vulkan.image.ImageDescriptor;
 import org.sarge.jove.platform.vulkan.image.ImageExtents;
 import org.sarge.jove.platform.vulkan.image.View;
@@ -76,14 +76,15 @@ public class TextureConfiguration {
 				.submitAndWait(graphics);
 
 		// Create staging buffer
-		final Bufferable data = Bufferable.of(image.bytes());
-		final VulkanBuffer staging = VulkanBuffer.staging(dev, allocator, data);
+		//final Bufferable data = Bufferable.of(image.bytes());
+		final VulkanBuffer staging = VulkanBuffer.staging(dev, allocator, image.buffer());
 
 		// Copy staging to texture
 		new ImageCopyCommand.Builder()
 				.image(texture)
 				.buffer(staging)
 				.layout(VkImageLayout.TRANSFER_DST_OPTIMAL)
+				.region(CopyRegion.of(descriptor))
 				.build()
 				.submitAndWait(graphics);
 
@@ -104,7 +105,7 @@ public class TextureConfiguration {
 				.submitAndWait(graphics);
 
 		// Build component mapping for the image
-		final VkComponentMapping mapping = ComponentMappingBuilder.build(image.mapping());
+		final VkComponentMapping mapping = ComponentMappingBuilder.build(image.layout().components());
 
 		// Create texture view
 		return new View.Builder(texture)

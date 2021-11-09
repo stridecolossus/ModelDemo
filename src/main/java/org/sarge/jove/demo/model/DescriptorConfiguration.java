@@ -51,7 +51,7 @@ public class DescriptorConfiguration {
 	@Bean
 	public List<DescriptorSet> descriptors(Pool pool, Layout layout, Sampler sampler, View texture, VulkanBuffer uniform) {
 		// Allocate descriptor set per frame-buffer
-		final var descriptors = pool.allocate(layout, cfg.getFrameCount());
+		final List<DescriptorSet> descriptors = pool.allocate(layout, cfg.getFrameCount());
 
 		// Init resources
 		DescriptorSet.set(descriptors, samplerBinding, sampler.resource(texture));

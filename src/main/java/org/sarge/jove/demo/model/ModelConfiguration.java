@@ -13,6 +13,7 @@ import org.sarge.jove.platform.vulkan.core.LogicalDevice;
 import org.sarge.jove.platform.vulkan.core.VulkanBuffer;
 import org.sarge.jove.platform.vulkan.memory.AllocationService;
 import org.sarge.jove.platform.vulkan.memory.MemoryProperties;
+import org.sarge.jove.platform.vulkan.render.DrawCommand;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
@@ -36,6 +37,11 @@ public class ModelConfiguration {
 	@Bean
 	public static Model.Header header(Model model) {
 		return model.header();
+	}
+
+	@Bean
+	public static DrawCommand draw(Model model) {
+		return DrawCommand.of(model);
 	}
 
 	@Bean
