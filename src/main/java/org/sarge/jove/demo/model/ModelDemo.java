@@ -9,7 +9,6 @@ import org.sarge.jove.control.RenderLoop.Task;
 import org.sarge.jove.io.DataSource;
 import org.sarge.jove.io.FileDataSource;
 import org.sarge.jove.platform.vulkan.core.LogicalDevice;
-import org.sarge.jove.platform.vulkan.pipeline.PipelineCache;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.CommandLineRunner;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
@@ -34,13 +33,8 @@ public class ModelDemo {
 		@Autowired private RenderLoop app;
 		@Autowired private LogicalDevice dev;
 
-		// TODO
-		@Autowired private PipelineCache cache;
-
 		@Override
 		public void run(String... args) throws Exception {
-			System.out.println("cache="+cache.data().capacity());
-			// TODO
 			app.run();
 			dev.waitIdle();
 		}

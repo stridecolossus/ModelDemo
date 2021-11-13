@@ -2,13 +2,21 @@ package org.sarge.jove.demo.model;
 
 import java.io.IOException;
 
-import org.sarge.jove.common.ImageData;
 import org.sarge.jove.io.DataSource;
-import org.sarge.jove.platform.vulkan.*;
+import org.sarge.jove.io.ImageData;
+import org.sarge.jove.io.NativeImageLoader;
+import org.sarge.jove.io.ResourceLoaderAdapter;
+import org.sarge.jove.platform.vulkan.VkAccess;
+import org.sarge.jove.platform.vulkan.VkFormat;
+import org.sarge.jove.platform.vulkan.VkImageAspect;
+import org.sarge.jove.platform.vulkan.VkImageLayout;
+import org.sarge.jove.platform.vulkan.VkImageType;
+import org.sarge.jove.platform.vulkan.VkImageUsage;
+import org.sarge.jove.platform.vulkan.VkMemoryProperty;
+import org.sarge.jove.platform.vulkan.VkPipelineStage;
 import org.sarge.jove.platform.vulkan.common.Command.Pool;
 import org.sarge.jove.platform.vulkan.core.LogicalDevice;
 import org.sarge.jove.platform.vulkan.core.VulkanBuffer;
-import org.sarge.jove.platform.vulkan.image.ComponentMappingBuilder;
 import org.sarge.jove.platform.vulkan.image.Image;
 import org.sarge.jove.platform.vulkan.image.ImageCopyCommand;
 import org.sarge.jove.platform.vulkan.image.ImageCopyCommand.CopyRegion;
@@ -36,7 +44,11 @@ public class TextureConfiguration {
 	@Bean
 	public View texture(AllocationService allocator, DataSource src, Pool graphics) throws IOException {
 		// Load texture image
-		final ImageData image = src.load("chalet.jpg", new ImageData.Loader());
+//		final var loader = new DataSourceResourceLoader<>(src, new ImageData.Loader());
+//		final ImageData image = loader.load("chalet.jpg");
+
+		final var loader = new ResourceLoaderAdapter<>(src, new NativeImageLoader());
+		final ImageData image = loader.load("chalet.jpg");
 
 		// Determine image format
 		final VkFormat format = FormatBuilder.format(image.layout());
@@ -77,7 +89,7 @@ public class TextureConfiguration {
 
 		// Create staging buffer
 		//final Bufferable data = Bufferable.of(image.bytes());
-		final VulkanBuffer staging = VulkanBuffer.staging(dev, allocator, image.buffer());
+		final VulkanBuffer staging = VulkanBuffer.staging(dev, allocator, image.data());
 
 		// Copy staging to texture
 		new ImageCopyCommand.Builder()
@@ -104,12 +116,9 @@ public class TextureConfiguration {
 				.build()
 				.submitAndWait(graphics);
 
-		// Build component mapping for the image
-		final VkComponentMapping mapping = ComponentMappingBuilder.build(image.layout().components());
-
 		// Create texture view
 		return new View.Builder(texture)
-				.mapping(mapping)
+				.mapping(image)
 				.build();
 	}
 }

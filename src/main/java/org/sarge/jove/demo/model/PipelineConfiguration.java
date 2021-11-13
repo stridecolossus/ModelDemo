@@ -4,12 +4,12 @@ import java.io.IOException;
 
 import org.sarge.jove.common.Rectangle;
 import org.sarge.jove.io.DataSource;
+import org.sarge.jove.io.ResourceLoaderAdapter;
 import org.sarge.jove.model.Model;
 import org.sarge.jove.platform.vulkan.VkShaderStage;
 import org.sarge.jove.platform.vulkan.core.LogicalDevice;
 import org.sarge.jove.platform.vulkan.core.Shader;
 import org.sarge.jove.platform.vulkan.pipeline.Pipeline;
-import org.sarge.jove.platform.vulkan.pipeline.PipelineCache;
 import org.sarge.jove.platform.vulkan.pipeline.PipelineLayout;
 import org.sarge.jove.platform.vulkan.render.DescriptorSet;
 import org.sarge.jove.platform.vulkan.render.RenderPass;
@@ -25,12 +25,14 @@ class PipelineConfiguration {
 
 	@Bean
 	Shader vertex() throws IOException {
-		return src.load("chalet.vert.spv", new Shader.Loader(dev));
+		final var loader = new ResourceLoaderAdapter<>(src, new Shader.Loader(dev));		// TODO
+		return loader.load("chalet.vert.spv");
 	}
 
 	@Bean
 	Shader fragment() throws IOException {
-		return src.load("chalet.frag.spv", new Shader.Loader(dev));
+		final var loader = new ResourceLoaderAdapter<>(src, new Shader.Loader(dev));		// TODO
+		return loader.load("chalet.frag.spv");
 	}
 
 	@Bean
@@ -41,48 +43,10 @@ class PipelineConfiguration {
 	}
 
 	@Bean
-	PipelineCache cache() throws IOException {
-//		// TODO
-////		return wrapper.src.load(CacheWrapper.FILENAME, null)
-		return PipelineCache.create(dev, null);
-	}
-
-//	@Component
-//	class CacheWrapper {
-//		private static final String FILENAME = "pipeline.cache";
-//
-//		private final DataSource src;
-//
-//		public CacheWrapper(ApplicationConfiguration cfg) throws IOException {
-//			// Create application data folder
-//			final String home = System.getProperty("user.home");
-//			final Path dir = Paths.get(home).resolve("JOVE").resolve(cfg.getTitle());
-//			Files.createDirectories(dir);
-//
-//			// Create pipeline cache file
-//			final Path file = dir.resolve(FILENAME);
-//			if(!Files.exists(file)) {
-//				Files.createFile(file);
-//			}
-//
-//			// Load pipeline cache
-//			this.src = new DataSource(dir);
-////			this.cache = src.load(filename, new PipelineCache.Loader(dev));
-//		}
-//
-//		@PreDestroy
-//		void close() throws IOException {
-//			final var loader = new PipelineCache.Loader(dev);
-//			loader.save(cache, Files.newOutputStream(file));
-//		}
-//	}
-
-	@Bean
-	public Pipeline pipeline(RenderPass pass, Swapchain swapchain, Shader vertex, Shader fragment, PipelineLayout layout, PipelineCache cache, Model.Header model) {
+	public Pipeline pipeline(RenderPass pass, Swapchain swapchain, Shader vertex, Shader fragment, PipelineLayout pipelineLayout, Model.Header model) {
 		final Rectangle viewport = new Rectangle(swapchain.extents());
 		return new Pipeline.Builder()
-				.layout(layout)
-				.cache(cache)
+				.layout(pipelineLayout)
 				.pass(pass)
 				.viewport()
 					.flip(true)

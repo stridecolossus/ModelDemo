@@ -1,5 +1,7 @@
 package org.sarge.jove.demo.model;
 
+import java.nio.ByteBuffer;
+
 import org.sarge.jove.control.ActionBindings;
 import org.sarge.jove.control.RenderLoop;
 import org.sarge.jove.control.RenderLoop.Task;
@@ -57,13 +59,19 @@ public class CameraConfiguration {
 	@Bean
 	public Task matrix(VulkanBuffer uniform) {
 		// TODO - can we bake these into the controller as offsets?
-		final Matrix x = Rotation.matrix(Vector.X, MathsUtil.toRadians(90));
-		final Matrix y = Rotation.matrix(Vector.Y, MathsUtil.toRadians(-120));
+		final Matrix x = Rotation.matrix(Vector.X, MathsUtil.toRadians(-90));
+		final Matrix y = Rotation.matrix(Vector.Y, MathsUtil.toRadians(120));
 		final Matrix model = y.multiply(x);
 
+		final ByteBuffer bb = uniform.memory().map().buffer();
+
 		return () -> {
-			final Matrix matrix = projection.multiply(cam.matrix()).multiply(model);
-			uniform.load(matrix);
+			// TODO - helper
+			// TODO - no need to do projection each time
+			bb.rewind();
+			model.buffer(bb);
+			cam.matrix().buffer(bb);
+			projection.buffer(bb);
 		};
 	}
 
@@ -75,6 +83,6 @@ public class CameraConfiguration {
 				.required(VkMemoryProperty.HOST_COHERENT)
 				.build();
 
-		return VulkanBuffer.create(dev, allocator, Matrix.IDENTITY.length(), props);
+		return VulkanBuffer.create(dev, allocator, 3 * Matrix.IDENTITY.length(), props);
 	}
 }

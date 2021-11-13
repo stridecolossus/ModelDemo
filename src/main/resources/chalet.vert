@@ -1,9 +1,10 @@
 #version 450
-#extension GL_ARB_separate_shader_objects : enable
 
-layout(binding = 1) uniform View {
-	mat4 matrix;
-} view;
+layout(set = 0, binding = 1) uniform UniformBuffer {
+    mat4 model;
+    mat4 view;
+    mat4 projection;
+};
 
 layout(location = 0) in vec3 pos;
 layout(location = 1) in vec2 coords;
@@ -11,6 +12,6 @@ layout(location = 1) in vec2 coords;
 layout(location = 0) out vec2 fragCoords;
 
 void main() {
-    gl_Position = view.matrix * vec4(pos, 1.0);
+    gl_Position = projection * view * model * vec4(pos, 1.0);
     fragCoords = coords;
 }

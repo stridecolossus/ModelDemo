@@ -40,7 +40,7 @@ public class DescriptorConfiguration {
 
 	@Bean
 	public Pool pool() {
-		final int count = cfg.getFrameCount();
+		final int count = 2 * cfg.getFrameCount();
 		return new Pool.Builder()
 				.add(VkDescriptorType.COMBINED_IMAGE_SAMPLER, count)
 				.add(VkDescriptorType.UNIFORM_BUFFER, count)
@@ -55,6 +55,19 @@ public class DescriptorConfiguration {
 
 		// Init resources
 		DescriptorSet.set(descriptors, samplerBinding, sampler.resource(texture));
+		DescriptorSet.set(descriptors, uniformBinding, uniform.uniform());
+		DescriptorSet.update(dev, descriptors);
+
+		return descriptors;
+	}
+
+	@Bean
+	public List<DescriptorSet> skyboxDescriptors(DescriptorSet.Pool pool, Layout layout, Sampler cubeSampler, View cubemap, VulkanBuffer uniform) {
+		// Allocate descriptor set per frame-buffer
+		final List<DescriptorSet> descriptors = pool.allocate(layout, cfg.getFrameCount());
+
+		// Init resources
+		DescriptorSet.set(descriptors, samplerBinding, cubeSampler.resource(cubemap));
 		DescriptorSet.set(descriptors, uniformBinding, uniform.uniform());
 		DescriptorSet.update(dev, descriptors);
 

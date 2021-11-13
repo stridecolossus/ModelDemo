@@ -4,6 +4,7 @@ import java.io.IOException;
 
 import org.sarge.jove.common.Bufferable;
 import org.sarge.jove.io.DataSource;
+import org.sarge.jove.io.ResourceLoaderAdapter;
 import org.sarge.jove.model.Model;
 import org.sarge.jove.model.ModelLoader;
 import org.sarge.jove.platform.vulkan.VkBufferUsage;
@@ -31,7 +32,17 @@ public class ModelConfiguration {
 //		final ModelLoader out = new ModelLoader();
 //		out.write(model, new FileOutputStream("./src/main/resources/chalet.model"));
 
-		return src.load("chalet.model", new ModelLoader());
+//		final Model model = src.load("chalet.obj", new ObjectModelLoader()).iterator().next();
+//		src.write("chalet.model", model, new ModelLoader());
+//		return model;
+
+		// TODO - load OBJ and save .model if not present?
+
+
+		final var loader = new ResourceLoaderAdapter<>(src, new ModelLoader());
+		return loader.load("chalet.model");
+
+		//return src.load("chalet.model", new ModelLoader());
 	}
 
 	@Bean
@@ -54,7 +65,12 @@ public class ModelConfiguration {
 		return buffer(model.index().get(), VkBufferUsage.INDEX_BUFFER);
 	}
 
-	private VulkanBuffer buffer(Bufferable data, VkBufferUsage usage) {
+	@Bean
+	public VulkanBuffer skyboxVertexBuffer(Model skybox) {
+		return buffer(skybox.vertices(), VkBufferUsage.VERTEX_BUFFER);
+	}
+
+	protected VulkanBuffer buffer(Bufferable data, VkBufferUsage usage) {
 		// Create staging buffer
 		final VulkanBuffer staging = VulkanBuffer.staging(dev, allocator, data);
 

@@ -7,6 +7,7 @@ import org.sarge.jove.control.FrameCounter;
 import org.sarge.jove.control.FrameThrottle;
 import org.sarge.jove.control.FrameTracker;
 import org.sarge.jove.control.RenderLoop.Task;
+import org.sarge.jove.model.Model;
 import org.sarge.jove.platform.vulkan.VkIndexType;
 import org.sarge.jove.platform.vulkan.common.Command;
 import org.sarge.jove.platform.vulkan.common.Command.Buffer;
@@ -23,7 +24,7 @@ import org.springframework.context.annotation.Configuration;
 @Configuration
 public class RenderConfiguration {
 	@Bean
-	public static List<Buffer> command(Command.Pool graphics, List<FrameBuffer> buffers, List<DescriptorSet> sets, BiConsumer<Command.Buffer, DescriptorSet> recorder) {
+	public static List<Buffer> command(Command.Pool graphics, List<FrameBuffer> buffers, BiConsumer<Command.Buffer, Integer> recorder, BiConsumer<Command.Buffer, Integer> skyboxRecorder) {
 		final List<Command.Buffer> commands = graphics.allocate(2);
 
 		for(int n = 0; n < 2; ++n) {
@@ -31,8 +32,12 @@ public class RenderConfiguration {
 			final FrameBuffer fb = buffers.get(n);
 			cmd.begin().add(fb.begin());
 
-			final DescriptorSet ds = sets.get(n);
-			recorder.accept(cmd, ds);
+			recorder.accept(cmd, n);
+			skyboxRecorder.accept(cmd, n);
+
+//			final DescriptorSet ds = sets.get(n);
+//			recorder.accept(cmd, ds);
+//			skyboxRecorder.accept(cmd, ds);
 
 			cmd.add(FrameBuffer.END).end();
 		}
@@ -41,13 +46,30 @@ public class RenderConfiguration {
 	}
 
 	@Bean
-	public static BiConsumer<Command.Buffer, DescriptorSet> recorder(Pipeline pipeline, VulkanBuffer vbo, VulkanBuffer index, DrawCommand draw) {
-		return (cmd, set) -> {
+	public static BiConsumer<Command.Buffer, Integer> recorder(Pipeline pipeline, List<DescriptorSet> descriptors, VulkanBuffer vbo, VulkanBuffer index, DrawCommand draw) {
+		return (cmd, n) -> {
+
+			final DescriptorSet set = descriptors.get(n);
+
 			cmd
 					.add(pipeline.bind())
 					.add(set.bind(pipeline.layout()))
 					.add(vbo.bindVertexBuffer())
 					.add(index.bindIndexBuffer(VkIndexType.UINT32))
+					.add(draw);
+		};
+	}
+
+	@Bean
+	public static BiConsumer<Command.Buffer, Integer> skyboxRecorder(Pipeline skyboxPipeline, List<DescriptorSet> skyboxDescriptors, VulkanBuffer skyboxVertexBuffer, Model skybox) {
+		final DrawCommand draw = DrawCommand.of(skybox);
+
+		return (cmd, n) -> {
+			final DescriptorSet set = skyboxDescriptors.get(n);
+			cmd
+					.add(skyboxPipeline.bind())
+					.add(set.bind(skyboxPipeline.layout()))
+					.add(skyboxVertexBuffer.bindVertexBuffer())
 					.add(draw);
 		};
 	}
