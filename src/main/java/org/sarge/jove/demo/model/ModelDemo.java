@@ -28,8 +28,8 @@ public class ModelDemo {
 	}
 
 	@Bean
-	public static DataSource data() {
-		return new FileDataSource("../Data");
+	public static DataSource data(ApplicationConfiguration cfg) {
+		return new FileDataSource(cfg.getDataDirectory());
 	}
 
 	@Bean
