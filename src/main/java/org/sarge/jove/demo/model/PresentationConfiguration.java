@@ -119,6 +119,7 @@ class PresentationConfiguration {
 		return RenderPass.create(dev, List.of(subpass));
 	}
 
+	// TODO - destroy
 	@Bean
 	public static List<FrameBuffer> buffers(Swapchain swapchain, RenderPass pass, View depth) {
 		final Dimensions extents = swapchain.extents();

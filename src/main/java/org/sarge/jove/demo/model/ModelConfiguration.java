@@ -2,7 +2,7 @@ package org.sarge.jove.demo.model;
 
 import java.io.IOException;
 
-import org.sarge.jove.common.Bufferable;
+import org.sarge.jove.io.Bufferable;
 import org.sarge.jove.io.DataSource;
 import org.sarge.jove.io.ResourceLoaderAdapter;
 import org.sarge.jove.model.Model;
@@ -26,7 +26,7 @@ public class ModelConfiguration {
 	@Autowired private Pool graphics;
 
 	@Bean
-	public static Model model(DataSource src) throws IOException {
+	public static Model model(DataSource data) throws IOException {
 //		final var adapter = ResourceLoader.of(src, new ObjectModelLoader());
 //		final Model model = adapter.apply("chalet.obj").iterator().next();
 //		final ModelLoader out = new ModelLoader();
@@ -39,7 +39,7 @@ public class ModelConfiguration {
 		// TODO - load OBJ and save .model if not present?
 
 
-		final var loader = new ResourceLoaderAdapter<>(src, new ModelLoader());
+		final var loader = new ResourceLoaderAdapter<>(data, new ModelLoader());
 		return loader.load("chalet.model");
 
 		//return src.load("chalet.model", new ModelLoader());

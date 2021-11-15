@@ -11,7 +11,7 @@ import org.sarge.jove.platform.vulkan.core.LogicalDevice;
 import org.sarge.jove.platform.vulkan.core.Shader;
 import org.sarge.jove.platform.vulkan.pipeline.Pipeline;
 import org.sarge.jove.platform.vulkan.pipeline.PipelineLayout;
-import org.sarge.jove.platform.vulkan.render.DescriptorSet;
+import org.sarge.jove.platform.vulkan.render.DescriptorLayout;
 import org.sarge.jove.platform.vulkan.render.RenderPass;
 import org.sarge.jove.platform.vulkan.render.Swapchain;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -21,22 +21,22 @@ import org.springframework.context.annotation.Configuration;
 @Configuration
 class PipelineConfiguration {
 	@Autowired private LogicalDevice dev;
-	@Autowired private DataSource src;
+	@Autowired private DataSource classpath;
 
 	@Bean
 	Shader vertex() throws IOException {
-		final var loader = new ResourceLoaderAdapter<>(src, new Shader.Loader(dev));		// TODO
+		final var loader = new ResourceLoaderAdapter<>(classpath, new Shader.Loader(dev));		// TODO
 		return loader.load("chalet.vert.spv");
 	}
 
 	@Bean
 	Shader fragment() throws IOException {
-		final var loader = new ResourceLoaderAdapter<>(src, new Shader.Loader(dev));		// TODO
+		final var loader = new ResourceLoaderAdapter<>(classpath, new Shader.Loader(dev));		// TODO
 		return loader.load("chalet.frag.spv");
 	}
 
 	@Bean
-	PipelineLayout pipelineLayout(DescriptorSet.Layout layout) {
+	PipelineLayout pipelineLayout(DescriptorLayout layout) {
 		return new PipelineLayout.Builder()
 				.add(layout)
 				.build(dev);

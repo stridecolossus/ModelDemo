@@ -42,12 +42,12 @@ public class TextureConfiguration {
 	}
 
 	@Bean
-	public View texture(AllocationService allocator, DataSource src, Pool graphics) throws IOException {
+	public View texture(AllocationService allocator, DataSource data, Pool graphics) throws IOException {
 		// Load texture image
 //		final var loader = new DataSourceResourceLoader<>(src, new ImageData.Loader());
 //		final ImageData image = loader.load("chalet.jpg");
 
-		final var loader = new ResourceLoaderAdapter<>(src, new NativeImageLoader());
+		final var loader = new ResourceLoaderAdapter<>(data, new NativeImageLoader());
 		final ImageData image = loader.load("chalet.jpg");
 
 		// Determine image format

@@ -7,10 +7,10 @@ import org.sarge.jove.platform.vulkan.VkShaderStage;
 import org.sarge.jove.platform.vulkan.core.LogicalDevice;
 import org.sarge.jove.platform.vulkan.core.VulkanBuffer;
 import org.sarge.jove.platform.vulkan.image.View;
+import org.sarge.jove.platform.vulkan.render.Binding;
+import org.sarge.jove.platform.vulkan.render.DescriptorLayout;
+import org.sarge.jove.platform.vulkan.render.DescriptorPool;
 import org.sarge.jove.platform.vulkan.render.DescriptorSet;
-import org.sarge.jove.platform.vulkan.render.DescriptorSet.Binding;
-import org.sarge.jove.platform.vulkan.render.DescriptorSet.Layout;
-import org.sarge.jove.platform.vulkan.render.DescriptorSet.Pool;
 import org.sarge.jove.platform.vulkan.render.Sampler;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.annotation.Bean;
@@ -34,14 +34,14 @@ public class DescriptorConfiguration {
 		    .build();
 
 	@Bean
-	public Layout layout() {
-		return Layout.create(dev, List.of(samplerBinding, uniformBinding));
+	public DescriptorLayout layout() {
+		return DescriptorLayout.create(dev, List.of(samplerBinding, uniformBinding));
 	}
 
 	@Bean
-	public Pool pool() {
+	public DescriptorPool pool() {
 		final int count = 2 * cfg.getFrameCount();
-		return new Pool.Builder()
+		return new DescriptorPool.Builder()
 				.add(VkDescriptorType.COMBINED_IMAGE_SAMPLER, count)
 				.add(VkDescriptorType.UNIFORM_BUFFER, count)
 				.max(count)
@@ -49,7 +49,7 @@ public class DescriptorConfiguration {
 	}
 
 	@Bean
-	public List<DescriptorSet> descriptors(Pool pool, Layout layout, Sampler sampler, View texture, VulkanBuffer uniform) {
+	public List<DescriptorSet> descriptors(DescriptorPool pool, DescriptorLayout layout, Sampler sampler, View texture, VulkanBuffer uniform) {
 		// Allocate descriptor set per frame-buffer
 		final List<DescriptorSet> descriptors = pool.allocate(layout, cfg.getFrameCount());
 
@@ -62,7 +62,7 @@ public class DescriptorConfiguration {
 	}
 
 	@Bean
-	public List<DescriptorSet> skyboxDescriptors(DescriptorSet.Pool pool, Layout layout, Sampler cubeSampler, View cubemap, VulkanBuffer uniform) {
+	public List<DescriptorSet> skyboxDescriptors(DescriptorPool pool, DescriptorLayout layout, Sampler cubeSampler, View cubemap, VulkanBuffer uniform) {
 		// Allocate descriptor set per frame-buffer
 		final List<DescriptorSet> descriptors = pool.allocate(layout, cfg.getFrameCount());
 

@@ -40,7 +40,7 @@ import org.springframework.context.annotation.Configuration;
 @Configuration
 public class SkyBoxConfiguration {
 	@Autowired private LogicalDevice dev;
-	@Autowired private DataSource src;
+	@Autowired private DataSource classpath;
 //	@Autowired private ApplicationConfiguration cfg;
 
 	@Bean
@@ -58,9 +58,9 @@ public class SkyBoxConfiguration {
 	}
 
 	@Bean
-	public View cubemap(AllocationService allocator, DataSource src, Pool graphics) throws IOException {
+	public View cubemap(AllocationService allocator, DataSource data, Pool graphics) throws IOException {
 		// Load image array
-		final var loader = new ResourceLoaderAdapter<>(src, new ImageLoader());
+		final var loader = new ResourceLoaderAdapter<>(data, new ImageLoader());
 		final ImageData image = loader.load("skybox.image");
 		if(image.count() != Image.CUBEMAP_ARRAY_LAYERS) throw new IllegalArgumentException("Invalid cubemap image");
 
@@ -202,13 +202,13 @@ public class SkyBoxConfiguration {
 
 	@Bean
 	public Shader skyboxVertex() throws IOException {
-		final var loader = new ResourceLoaderAdapter<>(src, new Shader.Loader(dev));	// TODO
+		final var loader = new ResourceLoaderAdapter<>(classpath, new Shader.Loader(dev));	// TODO
 		return loader.load("skybox.vert.spv");
 	}
 
 	@Bean
 	public Shader skyboxFragment() throws IOException {
-		final var loader = new ResourceLoaderAdapter<>(src, new Shader.Loader(dev));	// TODO
+		final var loader = new ResourceLoaderAdapter<>(classpath, new Shader.Loader(dev));	// TODO
 		return loader.load("skybox.frag.spv");
 	}
 

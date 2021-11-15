@@ -1,7 +1,5 @@
 package org.sarge.jove.demo.model;
 
-import java.nio.ByteBuffer;
-
 import org.sarge.jove.control.ActionBindings;
 import org.sarge.jove.control.RenderLoop;
 import org.sarge.jove.control.RenderLoop.Task;
@@ -15,6 +13,7 @@ import org.sarge.jove.platform.vulkan.VkBufferUsage;
 import org.sarge.jove.platform.vulkan.VkMemoryProperty;
 import org.sarge.jove.platform.vulkan.core.LogicalDevice;
 import org.sarge.jove.platform.vulkan.core.VulkanBuffer;
+import org.sarge.jove.platform.vulkan.core.VulkanBuffer.UniformBuffer;
 import org.sarge.jove.platform.vulkan.memory.AllocationService;
 import org.sarge.jove.platform.vulkan.memory.MemoryProperties;
 import org.sarge.jove.platform.vulkan.render.Swapchain;
@@ -57,25 +56,6 @@ public class CameraConfiguration {
 	}
 
 	@Bean
-	public Task matrix(VulkanBuffer uniform) {
-		// TODO - can we bake these into the controller as offsets?
-		final Matrix x = Rotation.matrix(Vector.X, MathsUtil.toRadians(-90));
-		final Matrix y = Rotation.matrix(Vector.Y, MathsUtil.toRadians(120));
-		final Matrix model = y.multiply(x);
-
-		final ByteBuffer bb = uniform.memory().map().buffer();
-
-		return () -> {
-			// TODO - helper
-			// TODO - no need to do projection each time
-			bb.rewind();
-			model.buffer(bb);
-			cam.matrix().buffer(bb);
-			projection.buffer(bb);
-		};
-	}
-
-	@Bean
 	public static VulkanBuffer uniform(LogicalDevice dev, AllocationService allocator) {
 		final MemoryProperties<VkBufferUsage> props = new MemoryProperties.Builder<VkBufferUsage>()
 				.usage(VkBufferUsage.UNIFORM_BUFFER)
@@ -84,5 +64,30 @@ public class CameraConfiguration {
 				.build();
 
 		return VulkanBuffer.create(dev, allocator, 3 * Matrix.IDENTITY.length(), props);
+	}
+
+	@Bean
+	public static UniformBuffer uniformBuffer(VulkanBuffer uniform) {
+		return uniform.uniform();
+	}
+
+	@Bean
+	public Task matrix(UniformBuffer uniform) {
+		// Init model rotation
+		// TODO - can we bake these into the controller as offsets?
+		final Matrix x = Rotation.matrix(Vector.X, MathsUtil.toRadians(-90));
+		final Matrix y = Rotation.matrix(Vector.Y, MathsUtil.toRadians(120));
+		final Matrix model = y.multiply(x);
+
+		// Add projection matrix
+		//final UniformBuffer ubo = uniform.uniform();
+		uniform.insert(2, projection);
+
+		// Update modelview matrix
+		return () -> {
+			uniform.rewind();
+			uniform.append(model);
+			uniform.append(cam.matrix());
+		};
 	}
 }
