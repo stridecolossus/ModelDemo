@@ -1,12 +1,12 @@
 #version 450
 
-layout(set = 0, binding = 1) uniform UniformBuffer {
+layout(location = 0) in vec3 inPosition;
+
+layout(push_constant) uniform Matrices {
     mat4 model;
     mat4 view;
     mat4 projection;
 };
-
-layout(location = 0) in vec3 inPosition;
 
 layout(location = 0) out vec3 outCoords;
 

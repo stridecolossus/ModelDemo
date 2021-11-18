@@ -6,16 +6,12 @@ import org.sarge.jove.control.RenderLoop.Task;
 import org.sarge.jove.geometry.Matrix;
 import org.sarge.jove.geometry.Rotation;
 import org.sarge.jove.geometry.Vector;
+import org.sarge.jove.io.BufferWrapper;
 import org.sarge.jove.platform.desktop.KeyboardDevice;
 import org.sarge.jove.platform.desktop.MouseDevice;
 import org.sarge.jove.platform.desktop.Window;
-import org.sarge.jove.platform.vulkan.VkBufferUsage;
-import org.sarge.jove.platform.vulkan.VkMemoryProperty;
-import org.sarge.jove.platform.vulkan.core.LogicalDevice;
-import org.sarge.jove.platform.vulkan.core.VulkanBuffer;
-import org.sarge.jove.platform.vulkan.core.VulkanBuffer.UniformBuffer;
-import org.sarge.jove.platform.vulkan.memory.AllocationService;
-import org.sarge.jove.platform.vulkan.memory.MemoryProperties;
+import org.sarge.jove.platform.vulkan.pipeline.PipelineLayout;
+import org.sarge.jove.platform.vulkan.pipeline.PushUpdateCommand;
 import org.sarge.jove.platform.vulkan.render.Swapchain;
 import org.sarge.jove.scene.Camera;
 import org.sarge.jove.scene.OrbitalCameraController;
@@ -55,24 +51,44 @@ public class CameraConfiguration {
 		return bindings;
 	}
 
-	@Bean
-	public static VulkanBuffer uniform(LogicalDevice dev, AllocationService allocator) {
-		final MemoryProperties<VkBufferUsage> props = new MemoryProperties.Builder<VkBufferUsage>()
-				.usage(VkBufferUsage.UNIFORM_BUFFER)
-				.required(VkMemoryProperty.HOST_VISIBLE)
-				.required(VkMemoryProperty.HOST_COHERENT)
-				.build();
+//	@Bean
+//	public static VulkanBuffer uniform(LogicalDevice dev, AllocationService allocator) {
+//		final MemoryProperties<VkBufferUsage> props = new MemoryProperties.Builder<VkBufferUsage>()
+//				.usage(VkBufferUsage.UNIFORM_BUFFER)
+//				.required(VkMemoryProperty.HOST_VISIBLE)
+//				.required(VkMemoryProperty.HOST_COHERENT)
+//				.build();
+//
+//		return VulkanBuffer.create(dev, allocator, 3 * Matrix.IDENTITY.length(), props);
+//	}
+//
+//	@Bean
+//	public Task matrix(PipelineLayout layout) {
+//		// Init model rotation
+//		// TODO - can we bake these into the controller as offsets?
+//		final Matrix x = Rotation.matrix(Vector.X, MathsUtil.toRadians(-90));
+//		final Matrix y = Rotation.matrix(Vector.Y, MathsUtil.toRadians(120));
+//		final Matrix model = y.multiply(x);
+//
+//		// Add projection matrix
+//		final BufferWrapper buffer = new BufferWrapper(uniform.buffer());
+//		buffer.insert(2, projection);
+//
+//		// Update modelview matrix
+//		return () -> {
+//			buffer.rewind();
+//			buffer.append(model);
+//			buffer.append(cam.matrix());
+//		};
+//	}
 
-		return VulkanBuffer.create(dev, allocator, 3 * Matrix.IDENTITY.length(), props);
+	@Bean
+	public static PushUpdateCommand update(PipelineLayout layout) {
+		return PushUpdateCommand.of(layout);
 	}
 
 	@Bean
-	public static UniformBuffer uniformBuffer(VulkanBuffer uniform) {
-		return uniform.uniform();
-	}
-
-	@Bean
-	public Task matrix(UniformBuffer uniform) {
+	public Task matrix(PushUpdateCommand update) {
 		// Init model rotation
 		// TODO - can we bake these into the controller as offsets?
 		final Matrix x = Rotation.matrix(Vector.X, MathsUtil.toRadians(-90));
@@ -80,14 +96,14 @@ public class CameraConfiguration {
 		final Matrix model = y.multiply(x);
 
 		// Add projection matrix
-		//final UniformBuffer ubo = uniform.uniform();
-		uniform.insert(2, projection);
+		final BufferWrapper buffer = new BufferWrapper(update.data());
+		buffer.insert(2, projection);
 
 		// Update modelview matrix
 		return () -> {
-			uniform.rewind();
-			uniform.append(model);
-			uniform.append(cam.matrix());
+			buffer.rewind();
+			buffer.append(model);
+			buffer.append(cam.matrix());
 		};
 	}
 }

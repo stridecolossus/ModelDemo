@@ -1,14 +1,15 @@
 package org.sarge.jove.demo.model;
 
+import org.sarge.jove.platform.vulkan.VkCommandPoolCreateFlag;
 import org.sarge.jove.platform.vulkan.VkQueueFlag;
-import org.sarge.jove.platform.vulkan.api.VulkanLibrary;
-import org.sarge.jove.platform.vulkan.common.Command.Pool;
 import org.sarge.jove.platform.vulkan.common.Queue;
+import org.sarge.jove.platform.vulkan.core.Command.Pool;
 import org.sarge.jove.platform.vulkan.core.Instance;
 import org.sarge.jove.platform.vulkan.core.LogicalDevice;
 import org.sarge.jove.platform.vulkan.core.PhysicalDevice;
 import org.sarge.jove.platform.vulkan.core.PhysicalDevice.Selector;
 import org.sarge.jove.platform.vulkan.core.Surface;
+import org.sarge.jove.platform.vulkan.core.VulkanLibrary;
 import org.sarge.jove.platform.vulkan.memory.AllocationService;
 import org.sarge.jove.platform.vulkan.memory.Allocator;
 import org.sarge.jove.platform.vulkan.memory.MemorySelector;
@@ -47,7 +48,7 @@ class DeviceConfiguration {
 
 	private static Pool pool(LogicalDevice dev, Selector selector) {
 		final Queue queue = dev.queue(selector.family());
-		return Pool.create(dev, queue);
+		return Pool.create(dev, queue, VkCommandPoolCreateFlag.RESET_COMMAND_BUFFER); // TODO
 	}
 
 	@Bean

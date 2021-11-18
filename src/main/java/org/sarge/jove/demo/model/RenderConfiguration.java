@@ -1,7 +1,8 @@
 package org.sarge.jove.demo.model;
 
 import java.util.List;
-import java.util.function.BiConsumer;
+
+import javax.annotation.PostConstruct;
 
 import org.sarge.jove.control.FrameCounter;
 import org.sarge.jove.control.FrameThrottle;
@@ -9,74 +10,104 @@ import org.sarge.jove.control.FrameTracker;
 import org.sarge.jove.control.RenderLoop.Task;
 import org.sarge.jove.model.Model;
 import org.sarge.jove.platform.vulkan.VkIndexType;
-import org.sarge.jove.platform.vulkan.common.Command;
-import org.sarge.jove.platform.vulkan.common.Command.Buffer;
+import org.sarge.jove.platform.vulkan.core.Command;
 import org.sarge.jove.platform.vulkan.core.VulkanBuffer;
 import org.sarge.jove.platform.vulkan.pipeline.Pipeline;
+import org.sarge.jove.platform.vulkan.pipeline.PushUpdateCommand;
 import org.sarge.jove.platform.vulkan.render.DescriptorSet;
 import org.sarge.jove.platform.vulkan.render.DrawCommand;
 import org.sarge.jove.platform.vulkan.render.FrameBuffer;
 import org.sarge.jove.platform.vulkan.render.RenderTask;
 import org.sarge.jove.platform.vulkan.render.Swapchain;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.stereotype.Component;
 
 @Configuration
 public class RenderConfiguration {
-	@Bean
-	public static List<Buffer> command(Command.Pool graphics, List<FrameBuffer> buffers, BiConsumer<Command.Buffer, Integer> recorder, BiConsumer<Command.Buffer, Integer> skyboxRecorder) {
-		final List<Command.Buffer> commands = graphics.allocate(2);
+	@Component
+	class Sequence {
+		@Autowired private Command.Pool graphics;
+		@Autowired private List<FrameBuffer> buffers;
+		@Autowired private PushUpdateCommand update;
 
-		for(int n = 0; n < 2; ++n) {
-			final Command.Buffer cmd = commands.get(n);
-			final FrameBuffer fb = buffers.get(n);
-			cmd.begin().add(fb.begin());
+		@Autowired private Pipeline pipeline;
+		@Autowired private List<DescriptorSet> descriptors;
+		@Autowired private VulkanBuffer vbo;
+		@Autowired private VulkanBuffer index;
+		@Autowired private DrawCommand draw;
 
-			recorder.accept(cmd, n);
-			skyboxRecorder.accept(cmd, n);
+		@Autowired private Pipeline skyboxPipeline;
+		@Autowired private List<DescriptorSet> skyboxDescriptors;
+		@Autowired private VulkanBuffer skyboxVertexBuffer;
+		@Autowired private Model skybox;
 
-//			final DescriptorSet ds = sets.get(n);
-//			recorder.accept(cmd, ds);
-//			skyboxRecorder.accept(cmd, ds);
+		private List<Command.Buffer> commands;
 
-			cmd.add(FrameBuffer.END).end();
+		@PostConstruct
+		void init() {
+			commands = graphics.allocate(2);
 		}
 
-		return commands;
-	}
+		public Command.Buffer get(int index) {
+			final Command.Buffer cmd = commands.get(index);
+			if(cmd.isReady()) {
+				cmd.reset();
+			}
+//			final Command.Buffer cmd = graphics.allocate();
+			record(cmd, index);
+			return cmd;
+		}
 
-	@Bean
-	public static BiConsumer<Command.Buffer, Integer> recorder(Pipeline pipeline, List<DescriptorSet> descriptors, VulkanBuffer vbo, VulkanBuffer index, DrawCommand draw) {
-		return (cmd, n) -> {
+//		A command pool must not be used concurrently in multiple threads.
+//		The application must not allocate and/or free descriptor sets from the same pool in multiple threads simultaneously.
 
-			final DescriptorSet set = descriptors.get(n);
+		// frame =
+		// 	command pool
+		//	descriptor set pool cache
+		//	descriptor set cache
+		//	buffer pool
+
+		// allocate and free
+		// => resetting buffers or pool
+
+		// resetting individual command buffers
+		// => expensive
+
+		// resetting command pool
+		// => periodic reset
+
+		// one-time command if not being reused
+		// minimise secondary buffers (expensive)
+		// avoid reset individual
+
+		private void record(Command.Buffer cmd, int idx) {
+			final FrameBuffer fb = buffers.get(idx);
+			final DescriptorSet ds = descriptors.get(idx);
+			final DescriptorSet ds2 = skyboxDescriptors.get(idx);
 
 			cmd
+				.begin()
+				.add(update)
+				.add(fb.begin())
 					.add(pipeline.bind())
-					.add(set.bind(pipeline.layout()))
+					.add(ds.bind(pipeline.layout()))
 					.add(vbo.bindVertexBuffer())
 					.add(index.bindIndexBuffer(VkIndexType.UINT32))
-					.add(draw);
-		};
-	}
-
-	@Bean
-	public static BiConsumer<Command.Buffer, Integer> skyboxRecorder(Pipeline skyboxPipeline, List<DescriptorSet> skyboxDescriptors, VulkanBuffer skyboxVertexBuffer, Model skybox) {
-		final DrawCommand draw = DrawCommand.of(skybox);
-
-		return (cmd, n) -> {
-			final DescriptorSet set = skyboxDescriptors.get(n);
-			cmd
+					.add(draw)
 					.add(skyboxPipeline.bind())
-					.add(set.bind(skyboxPipeline.layout()))
+					.add(ds2.bind(skyboxPipeline.layout()))
 					.add(skyboxVertexBuffer.bindVertexBuffer())
-					.add(draw);
-		};
+					.add(DrawCommand.of(skybox))
+				.add(FrameBuffer.END)
+				.end();
+		}
 	}
 
 	@Bean
-	public static Task render(Swapchain swapchain, List<Command.Buffer> buffers, Command.Pool presentation, ApplicationConfiguration cfg) {
-		return new RenderTask(swapchain, cfg.getFrameCount(), buffers::get, presentation.queue());
+	public static Task render(Swapchain swapchain, Sequence seq, Command.Pool presentation) {
+		return new RenderTask(swapchain, swapchain.count(), seq::get, presentation.queue());
 	}
 
 	@Bean
