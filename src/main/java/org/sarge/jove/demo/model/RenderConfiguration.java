@@ -3,14 +3,18 @@ package org.sarge.jove.demo.model;
 import java.util.List;
 
 import javax.annotation.PostConstruct;
+import javax.annotation.PreDestroy;
 
 import org.sarge.jove.control.FrameCounter;
 import org.sarge.jove.control.FrameThrottle;
 import org.sarge.jove.control.FrameTracker;
 import org.sarge.jove.control.RenderLoop.Task;
 import org.sarge.jove.model.Model;
+import org.sarge.jove.platform.vulkan.VkCommandBufferUsage;
 import org.sarge.jove.platform.vulkan.VkIndexType;
+import org.sarge.jove.platform.vulkan.common.Queue;
 import org.sarge.jove.platform.vulkan.core.Command;
+import org.sarge.jove.platform.vulkan.core.LogicalDevice;
 import org.sarge.jove.platform.vulkan.core.VulkanBuffer;
 import org.sarge.jove.platform.vulkan.pipeline.Pipeline;
 import org.sarge.jove.platform.vulkan.pipeline.PushUpdateCommand;
@@ -28,7 +32,8 @@ import org.springframework.stereotype.Component;
 public class RenderConfiguration {
 	@Component
 	class Sequence {
-		@Autowired private Command.Pool graphics;
+		@Autowired private LogicalDevice dev;
+		@Autowired private Queue graphics;
 		@Autowired private List<FrameBuffer> buffers;
 		@Autowired private PushUpdateCommand update;
 
@@ -43,21 +48,30 @@ public class RenderConfiguration {
 		@Autowired private VulkanBuffer skyboxVertexBuffer;
 		@Autowired private Model skybox;
 
-		private List<Command.Buffer> commands;
+		private Command.Pool[] pools = new Command.Pool[2];
 
 		@PostConstruct
 		void init() {
-			commands = graphics.allocate(2);
+			for(int n = 0; n < 2; ++n) {
+				pools[n] = Command.Pool.create(dev, graphics);
+			}
+		}
+
+		@PreDestroy
+		void destroy() {
+			for(int n = 0; n < 2; ++n) {
+				pools[n].destroy();
+			}
 		}
 
 		public Command.Buffer get(int index) {
-			final Command.Buffer cmd = commands.get(index);
-			if(cmd.isReady()) {
-				cmd.reset();
-			}
-//			final Command.Buffer cmd = graphics.allocate();
-			record(cmd, index);
-			return cmd;
+			final Command.Pool pool = pools[index];
+			pool.reset();
+
+			final Command.Buffer buffer = pool.allocate();
+			record(buffer, index);
+
+			return buffer;
 		}
 
 //		A command pool must not be used concurrently in multiple threads.
@@ -69,36 +83,24 @@ public class RenderConfiguration {
 		//	descriptor set cache
 		//	buffer pool
 
-		// allocate and free
-		// => resetting buffers or pool
-
-		// resetting individual command buffers
-		// => expensive
-
-		// resetting command pool
-		// => periodic reset
-
-		// one-time command if not being reused
-		// minimise secondary buffers (expensive)
-		// avoid reset individual
-
 		private void record(Command.Buffer cmd, int idx) {
 			final FrameBuffer fb = buffers.get(idx);
 			final DescriptorSet ds = descriptors.get(idx);
 			final DescriptorSet ds2 = skyboxDescriptors.get(idx);
 
 			cmd
-				.begin()
+				.begin(VkCommandBufferUsage.ONE_TIME_SUBMIT)
 				.add(update)
 				.add(fb.begin())
 					.add(pipeline.bind())
 					.add(ds.bind(pipeline.layout()))
-					.add(vbo.bindVertexBuffer())
+					.add(vbo.bindVertexBuffer(0))
+					//.add(instances.bindVertexBuffer(1))
 					.add(index.bindIndexBuffer(VkIndexType.UINT32))
 					.add(draw)
 					.add(skyboxPipeline.bind())
 					.add(ds2.bind(skyboxPipeline.layout()))
-					.add(skyboxVertexBuffer.bindVertexBuffer())
+					.add(skyboxVertexBuffer.bindVertexBuffer(0))
 					.add(DrawCommand.of(skybox))
 				.add(FrameBuffer.END)
 				.end();

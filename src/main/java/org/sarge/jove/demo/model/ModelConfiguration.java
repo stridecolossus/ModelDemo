@@ -9,9 +9,9 @@ import org.sarge.jove.model.Model;
 import org.sarge.jove.model.ModelLoader;
 import org.sarge.jove.platform.vulkan.VkBufferUsage;
 import org.sarge.jove.platform.vulkan.VkMemoryProperty;
+import org.sarge.jove.platform.vulkan.core.Command.Pool;
 import org.sarge.jove.platform.vulkan.core.LogicalDevice;
 import org.sarge.jove.platform.vulkan.core.VulkanBuffer;
-import org.sarge.jove.platform.vulkan.core.Command.Pool;
 import org.sarge.jove.platform.vulkan.memory.AllocationService;
 import org.sarge.jove.platform.vulkan.memory.MemoryProperties;
 import org.sarge.jove.platform.vulkan.render.DrawCommand;
@@ -23,7 +23,7 @@ import org.springframework.context.annotation.Configuration;
 public class ModelConfiguration {
 	@Autowired private LogicalDevice dev;
 	@Autowired private AllocationService allocator;
-	@Autowired private Pool graphics;
+	@Autowired private Pool transfer;
 
 	@Bean
 	public static Model model(DataSource data) throws IOException {
@@ -52,6 +52,11 @@ public class ModelConfiguration {
 
 	@Bean
 	public static DrawCommand draw(Model model) {
+//		return new DrawCommand.Builder()
+//				.count(model.header().count())
+//				.indexed(0)
+//				.instanced(3, 0)
+//				.build();
 		return DrawCommand.of(model);
 	}
 
@@ -64,6 +69,25 @@ public class ModelConfiguration {
 	public VulkanBuffer index(Model model) {
 		return buffer(model.index().get(), VkBufferUsage.INDEX_BUFFER);
 	}
+
+//	@Bean
+//	public VulkanBuffer instances() {
+//		final Bufferable data = new Bufferable() {
+//			@Override
+//			public int length() {
+//				return 3 * Point.LAYOUT.length();
+//			}
+//
+//			@Override
+//			public void buffer(ByteBuffer bb) {
+//				new Point(-1, 0, 0).buffer(bb);
+//				new Point(0, 0, -1).buffer(bb);
+//				new Point(1, 0, -2).buffer(bb);
+//			}
+//		};
+//
+//		return buffer(data, VkBufferUsage.VERTEX_BUFFER);
+//	}
 
 	@Bean
 	public VulkanBuffer skyboxVertexBuffer(Model skybox) {
@@ -85,7 +109,7 @@ public class ModelConfiguration {
 		final VulkanBuffer buffer = VulkanBuffer.create(dev, allocator, staging.length(), props);
 
 		// Copy staging to buffer
-		staging.copy(buffer).submitAndWait(graphics);
+		staging.copy(buffer).submitAndWait(transfer);
 
 		// Release staging
 		staging.destroy();

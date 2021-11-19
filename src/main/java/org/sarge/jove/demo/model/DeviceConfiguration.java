@@ -1,9 +1,8 @@
 package org.sarge.jove.demo.model;
 
-import org.sarge.jove.platform.vulkan.VkCommandPoolCreateFlag;
 import org.sarge.jove.platform.vulkan.VkQueueFlag;
 import org.sarge.jove.platform.vulkan.common.Queue;
-import org.sarge.jove.platform.vulkan.core.Command.Pool;
+import org.sarge.jove.platform.vulkan.core.Command;
 import org.sarge.jove.platform.vulkan.core.Instance;
 import org.sarge.jove.platform.vulkan.core.LogicalDevice;
 import org.sarge.jove.platform.vulkan.core.PhysicalDevice;
@@ -46,19 +45,19 @@ class DeviceConfiguration {
 				.build();
 	}
 
-	private static Pool pool(LogicalDevice dev, Selector selector) {
-		final Queue queue = dev.queue(selector.family());
-		return Pool.create(dev, queue, VkCommandPoolCreateFlag.RESET_COMMAND_BUFFER); // TODO
+	@Bean
+	public Queue graphics(LogicalDevice dev) {
+		return dev.queue(graphics.family());
 	}
 
 	@Bean
-	public Pool graphics(LogicalDevice dev) {
-		return pool(dev, graphics);
+	public Queue presentation(LogicalDevice dev) {
+		return dev.queue(presentation.family());
 	}
 
 	@Bean
-	public Pool presentation(LogicalDevice dev) {
-		return pool(dev, presentation);
+	public static Command.Pool transfer(LogicalDevice dev, Queue graphics) {
+		return Command.Pool.create(dev, graphics);
 	}
 
 	@Bean

@@ -14,9 +14,9 @@ import org.sarge.jove.platform.vulkan.VkImageType;
 import org.sarge.jove.platform.vulkan.VkImageUsage;
 import org.sarge.jove.platform.vulkan.VkMemoryProperty;
 import org.sarge.jove.platform.vulkan.VkPipelineStage;
+import org.sarge.jove.platform.vulkan.core.Command.Pool;
 import org.sarge.jove.platform.vulkan.core.LogicalDevice;
 import org.sarge.jove.platform.vulkan.core.VulkanBuffer;
-import org.sarge.jove.platform.vulkan.core.Command.Pool;
 import org.sarge.jove.platform.vulkan.image.Image;
 import org.sarge.jove.platform.vulkan.image.ImageCopyCommand;
 import org.sarge.jove.platform.vulkan.image.ImageCopyCommand.CopyRegion;
@@ -42,7 +42,7 @@ public class TextureConfiguration {
 	}
 
 	@Bean
-	public View texture(AllocationService allocator, DataSource data, Pool graphics) throws IOException {
+	public View texture(AllocationService allocator, DataSource data, Pool transfer) throws IOException {
 		// Load texture image
 //		final var loader = new DataSourceResourceLoader<>(src, new ImageData.Loader());
 //		final ImageData image = loader.load("chalet.jpg");
@@ -85,7 +85,7 @@ public class TextureConfiguration {
 					.destination(VkAccess.TRANSFER_WRITE)
 					.build()
 				.build()
-				.submitAndWait(graphics);
+				.submitAndWait(transfer);
 
 		// Create staging buffer
 		//final Bufferable data = Bufferable.of(image.bytes());
@@ -98,7 +98,7 @@ public class TextureConfiguration {
 				.layout(VkImageLayout.TRANSFER_DST_OPTIMAL)
 				.region(CopyRegion.of(descriptor))
 				.build()
-				.submitAndWait(graphics);
+				.submitAndWait(transfer);
 
 		// Release staging
 		staging.destroy();
@@ -114,7 +114,7 @@ public class TextureConfiguration {
 					.destination(VkAccess.SHADER_READ)
 					.build()
 				.build()
-				.submitAndWait(graphics);
+				.submitAndWait(transfer);
 
 		// Create texture view
 		return new View.Builder(texture)
