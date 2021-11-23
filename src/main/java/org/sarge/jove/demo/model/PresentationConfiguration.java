@@ -33,23 +33,16 @@ class PresentationConfiguration {
 	@Bean
 	public Swapchain swapchain(Surface.Properties props, ApplicationConfiguration cfg) {
 		// Select presentation mode
-		final VkPresentModeKHR mode = props.modes().contains(VkPresentModeKHR.MAILBOX_KHR) ? VkPresentModeKHR.MAILBOX_KHR : Swapchain.DEFAULT_PRESENTATION_MODE;
+		final VkPresentModeKHR mode = Swapchain.mode(props, VkPresentModeKHR.MAILBOX_KHR);
 
 		// Select SRGB surface format
-		final List<VkSurfaceFormatKHR> formats = props.formats();
-		final VkSurfaceFormatKHR format = formats
-				.stream()
-				.filter(f -> f.format == VkFormat.B8G8R8_UNORM)
-				.filter(f -> f.colorSpace == VkColorSpaceKHR.SRGB_NONLINEAR_KHR)
-				.findAny()
-				.orElse(formats.get(0));
+		final VkSurfaceFormatKHR format = props.format(VkFormat.B8G8R8_UNORM, VkColorSpaceKHR.SRGB_NONLINEAR_KHR);
 
 		// Create swapchain
 		return new Swapchain.Builder(dev, props)
 				.count(cfg.getFrameCount())
 				.clear(cfg.getBackground())
-				.format(format.format)
-				.space(format.colorSpace)
+				.format(format)
 				.presentation(mode)
 				.build();
 	}
@@ -124,7 +117,7 @@ class PresentationConfiguration {
 	public static List<FrameBuffer> buffers(Swapchain swapchain, RenderPass pass, View depth) {
 		final Dimensions extents = swapchain.extents();
 		return swapchain
-				.views()
+				.attachments()
 				.stream()
 				.map(view -> FrameBuffer.create(pass, extents, List.of(view, depth)))
 				.collect(toList());

@@ -11,6 +11,7 @@ import org.sarge.jove.platform.vulkan.core.Surface;
 import org.sarge.jove.platform.vulkan.core.VulkanLibrary;
 import org.sarge.jove.platform.vulkan.memory.AllocationService;
 import org.sarge.jove.platform.vulkan.memory.Allocator;
+import org.sarge.jove.platform.vulkan.memory.Allocator.DefaultAllocator;
 import org.sarge.jove.platform.vulkan.memory.MemorySelector;
 import org.sarge.jove.platform.vulkan.util.ValidationLayer;
 import org.springframework.context.annotation.Bean;
@@ -67,7 +68,7 @@ class DeviceConfiguration {
 
 	@Bean
 	public static Allocator allocator(LogicalDevice dev) {
-		final Allocator allocator = Allocator.allocator(dev);
+		final Allocator allocator = new DefaultAllocator(dev);
 		// TODO - pagination, pool, expanding
 		//return new PoolAllocator(allocator, Integer.MAX_VALUE);		// TODO
 		return allocator;

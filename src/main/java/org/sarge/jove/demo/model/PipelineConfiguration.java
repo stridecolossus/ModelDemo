@@ -49,7 +49,7 @@ class PipelineConfiguration {
 	}
 
 	@Bean
-	public Pipeline pipeline(RenderPass pass, Swapchain swapchain, Shader vertex, Shader fragment, PipelineLayout pipelineLayout, Model.Header model) {
+	public Pipeline pipeline(RenderPass pass, Swapchain swapchain, Shader vertex, Shader fragment, PipelineLayout pipelineLayout, Model model) {
 		final Rectangle viewport = new Rectangle(swapchain.extents());
 		return new Pipeline.Builder()
 				.layout(pipelineLayout)
@@ -65,7 +65,7 @@ class PipelineConfiguration {
 					.shader(fragment)
 					.build()
 				.input()
-					.add(model.layout())
+					.add(model.header().layout())
 //					.binding()
 //						.rate(VkVertexInputRate.INSTANCE)
 //						.stride(Point.LAYOUT.length())
@@ -76,7 +76,7 @@ class PipelineConfiguration {
 //						.build()
 					.build()
 				.assembly()
-					.topology(model.primitive())
+					.topology(model.header().primitive())
 					.build()
 				.depth()
 					.enable(true)

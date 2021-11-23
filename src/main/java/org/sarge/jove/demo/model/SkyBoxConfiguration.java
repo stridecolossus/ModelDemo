@@ -12,16 +12,16 @@ import org.sarge.jove.io.ResourceLoaderAdapter;
 import org.sarge.jove.model.CubeBuilder;
 import org.sarge.jove.model.Model;
 import org.sarge.jove.platform.vulkan.*;
+import org.sarge.jove.platform.vulkan.core.Command.Pool;
 import org.sarge.jove.platform.vulkan.core.LogicalDevice;
 import org.sarge.jove.platform.vulkan.core.VulkanBuffer;
-import org.sarge.jove.platform.vulkan.core.Command.Pool;
 import org.sarge.jove.platform.vulkan.image.Image;
 import org.sarge.jove.platform.vulkan.image.ImageCopyCommand;
 import org.sarge.jove.platform.vulkan.image.ImageCopyCommand.CopyRegion;
-import org.sarge.jove.platform.vulkan.image.Sampler.Wrap;
 import org.sarge.jove.platform.vulkan.image.ImageDescriptor;
 import org.sarge.jove.platform.vulkan.image.ImageExtents;
 import org.sarge.jove.platform.vulkan.image.Sampler;
+import org.sarge.jove.platform.vulkan.image.Sampler.Wrap;
 import org.sarge.jove.platform.vulkan.image.SubResource;
 import org.sarge.jove.platform.vulkan.image.View;
 import org.sarge.jove.platform.vulkan.memory.AllocationService;
@@ -30,6 +30,9 @@ import org.sarge.jove.platform.vulkan.pipeline.Barrier;
 import org.sarge.jove.platform.vulkan.pipeline.Pipeline;
 import org.sarge.jove.platform.vulkan.pipeline.PipelineLayout;
 import org.sarge.jove.platform.vulkan.pipeline.Shader;
+import org.sarge.jove.platform.vulkan.render.DescriptorSet;
+import org.sarge.jove.platform.vulkan.render.DrawCommand;
+import org.sarge.jove.platform.vulkan.render.FrameBuilder.Recorder;
 import org.sarge.jove.platform.vulkan.render.RenderPass;
 import org.sarge.jove.platform.vulkan.render.Swapchain;
 import org.sarge.jove.platform.vulkan.util.FormatBuilder;
@@ -58,7 +61,31 @@ public class SkyBoxConfiguration {
 	}
 
 	@Bean
-	public View cubemap(AllocationService allocator, DataSource data, Pool graphics) throws IOException {
+	public static Recorder skyboxRecorder(Pipeline skyboxPipeline, List<DescriptorSet> skyboxDescriptors, VulkanBuffer skyboxVertexBuffer, Model skybox) {
+		final DescriptorSet ds = skyboxDescriptors.get(0);
+		final DrawCommand draw = DrawCommand.of(skybox);
+
+		return buffer -> {
+			buffer
+					.add(skyboxPipeline.bind())
+					.add(ds.bind(skyboxPipeline.layout()))
+					.add(skyboxVertexBuffer.bindVertexBuffer(0))
+					.add(draw);
+		};
+	}
+
+	@Bean
+	public View cubemap(AllocationService allocator, DataSource data, Pool transfer) throws IOException {
+//		final String[] filenames = {"posx", "negx", "posy", "negy", "posz", "negz"};
+//		final ImageData[] images = new ImageData[6];
+//		final var loader3 = new ResourceLoaderAdapter<>(data, new NativeImageLoader());
+//		for(int n = 0; n < filenames.length; ++n) {
+//			images[n] = loader3.load(filenames[n] + ".jpg");
+//		}
+//		final ImageData array = ImageData.array(Arrays.asList(images));
+//		final ImageLoader loader2 = new ImageLoader();
+//		loader2.save(array, new DataOutputStream(new FileOutputStream("../Data/skybox.image")));
+
 		// Load image array
 		final var loader = new ResourceLoaderAdapter<>(data, new ImageLoader());
 		final ImageData image = loader.load("skybox.image");
@@ -99,18 +126,7 @@ public class SkyBoxConfiguration {
 					.destination(VkAccess.TRANSFER_WRITE)
 					.build()
 				.build()
-				.submitAndWait(graphics);
-
-		//final String[] filenames = {"posx", "negx", "posy", "negy", "posz", "negz"};
-		//final ImageData[] images = new ImageData[6];
-		//final var loader = new ResourceLoaderAdapter<>(src, new NativeImageLoader());
-//		for(int n = 0; n < filenames.length; ++n) {
-//			images[n] = loader.load(filenames[n] + ".jpg");
-//			System.out.println(images[n]);
-//		}
-
-		//final ImageLoader loader = new ImageLoader();
-		//loader2.save(array, new DataOutputStream(new FileOutputStream("./skybox.image")));
+				.submitAndWait(transfer);
 
 		// Load to staging buffer
 		final VulkanBuffer staging = VulkanBuffer.staging(dev, allocator, image.data());
@@ -137,7 +153,7 @@ public class SkyBoxConfiguration {
 		}
 
 		// Copy staging to texture
-		copy.build().submitAndWait(graphics);
+		copy.build().submitAndWait(transfer);
 		staging.destroy();
 
 		// TODO - 500 -> 190 ms
@@ -186,7 +202,7 @@ public class SkyBoxConfiguration {
 					.destination(VkAccess.SHADER_READ)
 					.build()
 				.build()
-				.submitAndWait(graphics);
+				.submitAndWait(transfer);
 
 		final SubResource subresource = new SubResource.Builder(descriptor)
 				.layerCount(Image.CUBEMAP_ARRAY_LAYERS)

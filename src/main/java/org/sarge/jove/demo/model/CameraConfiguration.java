@@ -1,8 +1,6 @@
 package org.sarge.jove.demo.model;
 
 import org.sarge.jove.control.ActionBindings;
-import org.sarge.jove.control.RenderLoop;
-import org.sarge.jove.control.RenderLoop.Task;
 import org.sarge.jove.geometry.Matrix;
 import org.sarge.jove.geometry.Rotation;
 import org.sarge.jove.geometry.Vector;
@@ -16,6 +14,8 @@ import org.sarge.jove.platform.vulkan.render.Swapchain;
 import org.sarge.jove.scene.Camera;
 import org.sarge.jove.scene.OrbitalCameraController;
 import org.sarge.jove.scene.Projection;
+import org.sarge.jove.scene.RenderLoop;
+import org.sarge.jove.scene.RenderLoop.Task;
 import org.sarge.jove.util.MathsUtil;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;

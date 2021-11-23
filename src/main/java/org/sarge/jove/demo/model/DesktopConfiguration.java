@@ -2,12 +2,12 @@ package org.sarge.jove.demo.model;
 
 import org.sarge.jove.common.Dimensions;
 import org.sarge.jove.common.Handle;
-import org.sarge.jove.control.RenderLoop.Task;
 import org.sarge.jove.platform.desktop.Desktop;
 import org.sarge.jove.platform.desktop.Window;
 import org.sarge.jove.platform.vulkan.core.Instance;
 import org.sarge.jove.platform.vulkan.core.PhysicalDevice;
 import org.sarge.jove.platform.vulkan.core.Surface;
+import org.sarge.jove.scene.RenderLoop.Task;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 

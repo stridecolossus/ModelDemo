@@ -38,7 +38,7 @@ public class DescriptorConfiguration {
 	}
 
 	@Bean
-	public DescriptorPool pool() {
+	public DescriptorPool descriptorPool() {
 		final int count = 2 * cfg.getFrameCount();
 		return new DescriptorPool.Builder()
 				.add(VkDescriptorType.COMBINED_IMAGE_SAMPLER, count)

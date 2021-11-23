@@ -14,7 +14,6 @@ import org.sarge.jove.platform.vulkan.core.LogicalDevice;
 import org.sarge.jove.platform.vulkan.core.VulkanBuffer;
 import org.sarge.jove.platform.vulkan.memory.AllocationService;
 import org.sarge.jove.platform.vulkan.memory.MemoryProperties;
-import org.sarge.jove.platform.vulkan.render.DrawCommand;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
@@ -27,37 +26,13 @@ public class ModelConfiguration {
 
 	@Bean
 	public static Model model(DataSource data) throws IOException {
-//		final var adapter = ResourceLoader.of(src, new ObjectModelLoader());
-//		final Model model = adapter.apply("chalet.obj").iterator().next();
-//		final ModelLoader out = new ModelLoader();
-//		out.write(model, new FileOutputStream("./src/main/resources/chalet.model"));
-
-//		final Model model = src.load("chalet.obj", new ObjectModelLoader()).iterator().next();
-//		src.write("chalet.model", model, new ModelLoader());
-//		return model;
-
-		// TODO - load OBJ and save .model if not present?
-
+//		final var adapter = new ResourceLoaderAdapter<>(data, new ObjectModelLoader());
+//		final Model model = adapter.load("chalet.obj").iterator().next();
+//		final ModelLoader loader2 = new ModelLoader();
+//		loader2.save(model, new DataOutputStream(new FileOutputStream("../Data/chalet.model")));
 
 		final var loader = new ResourceLoaderAdapter<>(data, new ModelLoader());
 		return loader.load("chalet.model");
-
-		//return src.load("chalet.model", new ModelLoader());
-	}
-
-	@Bean
-	public static Model.Header header(Model model) {
-		return model.header();
-	}
-
-	@Bean
-	public static DrawCommand draw(Model model) {
-//		return new DrawCommand.Builder()
-//				.count(model.header().count())
-//				.indexed(0)
-//				.instanced(3, 0)
-//				.build();
-		return DrawCommand.of(model);
 	}
 
 	@Bean
