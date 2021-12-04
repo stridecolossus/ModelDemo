@@ -1,10 +1,11 @@
 package org.sarge.jove.demo.model;
 
+import org.sarge.jove.common.BufferWrapper;
 import org.sarge.jove.control.ActionBindings;
 import org.sarge.jove.geometry.Matrix;
 import org.sarge.jove.geometry.Rotation;
+import org.sarge.jove.geometry.Rotation.DefaultRotation;
 import org.sarge.jove.geometry.Vector;
-import org.sarge.jove.io.BufferWrapper;
 import org.sarge.jove.platform.desktop.KeyboardDevice;
 import org.sarge.jove.platform.desktop.MouseDevice;
 import org.sarge.jove.platform.desktop.Window;
@@ -38,15 +39,13 @@ public class CameraConfiguration {
 		// Bind stop action
 		final ActionBindings bindings = new ActionBindings();
 		final KeyboardDevice keyboard = window.keyboard();
+		keyboard.bind(bindings);
 		bindings.bind(keyboard.key("ESCAPE"), loop::stop);
 
 		// Bind camera controller
 		final MouseDevice mouse = window.mouse();
 		bindings.bind(mouse.pointer(), controller::update);
 		bindings.bind(mouse.wheel(), controller::zoom);
-
-		// Init devices
-		bindings.init();
 
 		return bindings;
 	}
@@ -91,8 +90,8 @@ public class CameraConfiguration {
 	public Task matrix(PushUpdateCommand update) {
 		// Init model rotation
 		// TODO - can we bake these into the controller as offsets?
-		final Matrix x = Rotation.matrix(Vector.X, MathsUtil.toRadians(-90));
-		final Matrix y = Rotation.matrix(Vector.Y, MathsUtil.toRadians(120));
+		final Matrix x = Rotation.matrix(new DefaultRotation(Vector.X, MathsUtil.toRadians(-90)));
+		final Matrix y = Rotation.matrix(new DefaultRotation(Vector.Y, MathsUtil.toRadians(120)));
 		final Matrix model = y.multiply(x);
 
 		// Add projection matrix

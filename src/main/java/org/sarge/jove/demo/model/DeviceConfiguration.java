@@ -13,6 +13,7 @@ import org.sarge.jove.platform.vulkan.memory.AllocationService;
 import org.sarge.jove.platform.vulkan.memory.Allocator;
 import org.sarge.jove.platform.vulkan.memory.Allocator.DefaultAllocator;
 import org.sarge.jove.platform.vulkan.memory.MemorySelector;
+import org.sarge.jove.platform.vulkan.util.DeviceFeatures;
 import org.sarge.jove.platform.vulkan.util.ValidationLayer;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
@@ -27,22 +28,29 @@ class DeviceConfiguration {
 	}
 
 	@Bean
-	public PhysicalDevice physical(Instance instance) {
+	static DeviceFeatures features(ApplicationConfiguration cfg) {
+		return DeviceFeatures.of(cfg.getFeatures());
+	}
+
+	@Bean
+	public PhysicalDevice physical(Instance instance, DeviceFeatures features) {
 		return PhysicalDevice
 				.devices(instance)
 				.filter(graphics)
 				.filter(presentation)
+				.filter(PhysicalDevice.predicate(features))
 				.findAny()
 				.orElseThrow(() -> new RuntimeException("No suitable physical device available"));
 	}
 
 	@Bean
-	public LogicalDevice device(PhysicalDevice dev) {
+	public LogicalDevice device(PhysicalDevice dev, DeviceFeatures features) {
 		return new LogicalDevice.Builder(dev)
 				.extension(VulkanLibrary.EXTENSION_SWAP_CHAIN)
 				.layer(ValidationLayer.STANDARD_VALIDATION)
 				.queue(graphics.family())
 				.queue(presentation.family())
+				.features(features)
 				.build();
 	}
 

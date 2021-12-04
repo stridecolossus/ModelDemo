@@ -4,7 +4,6 @@ import java.io.IOException;
 
 import org.sarge.jove.io.DataSource;
 import org.sarge.jove.io.ImageData;
-import org.sarge.jove.io.NativeImageLoader;
 import org.sarge.jove.io.ResourceLoaderAdapter;
 import org.sarge.jove.platform.vulkan.VkAccess;
 import org.sarge.jove.platform.vulkan.VkFormat;
@@ -19,11 +18,10 @@ import org.sarge.jove.platform.vulkan.core.LogicalDevice;
 import org.sarge.jove.platform.vulkan.core.VulkanBuffer;
 import org.sarge.jove.platform.vulkan.image.Image;
 import org.sarge.jove.platform.vulkan.image.ImageCopyCommand;
-import org.sarge.jove.platform.vulkan.image.ImageCopyCommand.CopyRegion;
 import org.sarge.jove.platform.vulkan.image.ImageDescriptor;
-import org.sarge.jove.platform.vulkan.image.ImageExtents;
 import org.sarge.jove.platform.vulkan.image.Sampler;
 import org.sarge.jove.platform.vulkan.image.View;
+import org.sarge.jove.platform.vulkan.image.VulkanImageLoader;
 import org.sarge.jove.platform.vulkan.memory.AllocationService;
 import org.sarge.jove.platform.vulkan.memory.MemoryProperties;
 import org.sarge.jove.platform.vulkan.pipeline.Barrier;
@@ -37,8 +35,10 @@ public class TextureConfiguration {
 	@Autowired private LogicalDevice dev;
 
 	@Bean
-	public Sampler sampler() {
-		return new Sampler.Builder(dev).build();
+	public Sampler sampler(ApplicationConfiguration cfg) {
+		return new Sampler.Builder()
+				.anisotropy(cfg.getAnisotropy())
+				.build(dev);
 	}
 
 	@Bean
@@ -47,20 +47,24 @@ public class TextureConfiguration {
 //		final var loader = new DataSourceResourceLoader<>(src, new ImageData.Loader());
 //		final ImageData image = loader.load("chalet.jpg");
 
-		final var loader = new ResourceLoaderAdapter<>(data, new NativeImageLoader());
-		final ImageData image = loader.load("chalet.jpg");
+//		final var loader = new ResourceLoaderAdapter<>(data, new NativeImageLoader());
+//		final ImageData image = loader.load("chalet.jpg");
+
+		final var loader = new ResourceLoaderAdapter<>(data, new VulkanImageLoader());
+		final ImageData image = loader.load("chalet.ktx2");
 
 		// Determine image format
-		final VkFormat format = FormatBuilder.format(image.layout());
+		final VkFormat format = FormatBuilder.format(image);
 //		final VkFormat format = VkFormat.R8G8B8A8_UNORM;
-//System.err.println("IMAGE="+format);
+//		System.out.println(format);
 
 		// Create descriptor
 		final ImageDescriptor descriptor = new ImageDescriptor.Builder()
-				.type(VkImageType.IMAGE_TYPE_2D)
+				.type(VkImageType.TWO_D)
 				.aspect(VkImageAspect.COLOR)
-				.extents(new ImageExtents(image.size()))
+				.extents(image.extents())
 				.format(format)
+				.mipLevels(image.levels().size())
 				.build();
 
 		// Init image memory properties
@@ -88,15 +92,14 @@ public class TextureConfiguration {
 				.submitAndWait(transfer);
 
 		// Create staging buffer
-		//final Bufferable data = Bufferable.of(image.bytes());
 		final VulkanBuffer staging = VulkanBuffer.staging(dev, allocator, image.data());
 
-		// Copy staging to texture
+		// Copy staging to image
 		new ImageCopyCommand.Builder()
 				.image(texture)
 				.buffer(staging)
 				.layout(VkImageLayout.TRANSFER_DST_OPTIMAL)
-				.region(CopyRegion.of(descriptor))
+				.region(image)
 				.build()
 				.submitAndWait(transfer);
 

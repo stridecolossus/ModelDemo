@@ -7,7 +7,6 @@ import org.sarge.jove.common.Rectangle;
 import org.sarge.jove.geometry.Point;
 import org.sarge.jove.io.DataSource;
 import org.sarge.jove.io.ImageData;
-import org.sarge.jove.io.ImageLoader;
 import org.sarge.jove.io.ResourceLoaderAdapter;
 import org.sarge.jove.model.CubeBuilder;
 import org.sarge.jove.model.Model;
@@ -17,13 +16,12 @@ import org.sarge.jove.platform.vulkan.core.LogicalDevice;
 import org.sarge.jove.platform.vulkan.core.VulkanBuffer;
 import org.sarge.jove.platform.vulkan.image.Image;
 import org.sarge.jove.platform.vulkan.image.ImageCopyCommand;
-import org.sarge.jove.platform.vulkan.image.ImageCopyCommand.CopyRegion;
 import org.sarge.jove.platform.vulkan.image.ImageDescriptor;
-import org.sarge.jove.platform.vulkan.image.ImageExtents;
 import org.sarge.jove.platform.vulkan.image.Sampler;
 import org.sarge.jove.platform.vulkan.image.Sampler.Wrap;
 import org.sarge.jove.platform.vulkan.image.SubResource;
 import org.sarge.jove.platform.vulkan.image.View;
+import org.sarge.jove.platform.vulkan.image.VulkanImageLoader;
 import org.sarge.jove.platform.vulkan.memory.AllocationService;
 import org.sarge.jove.platform.vulkan.memory.MemoryProperties;
 import org.sarge.jove.platform.vulkan.pipeline.Barrier;
@@ -48,16 +46,14 @@ public class SkyBoxConfiguration {
 
 	@Bean
 	public static Model skybox() {
-		return new CubeBuilder()
-				.build()
-				.transform(List.of(Point.LAYOUT));
+		return new CubeBuilder(List.of(Point.LAYOUT)).build();
 	}
 
 	@Bean
 	public Sampler cubeSampler() {
-		return new Sampler.Builder(dev)
-				.wrap(Wrap.EDGE, false)
-				.build();
+		return new Sampler.Builder()
+				.wrap(Wrap.EDGE.mode(false))
+				.build(dev);
 	}
 
 	@Bean
@@ -86,21 +82,22 @@ public class SkyBoxConfiguration {
 //		final ImageLoader loader2 = new ImageLoader();
 //		loader2.save(array, new DataOutputStream(new FileOutputStream("../Data/skybox.image")));
 
-		// Load image array
-		final var loader = new ResourceLoaderAdapter<>(data, new ImageLoader());
-		final ImageData image = loader.load("skybox.image");
-		if(image.count() != Image.CUBEMAP_ARRAY_LAYERS) throw new IllegalArgumentException("Invalid cubemap image");
+		// Load cubemap image
+		final var loader = new ResourceLoaderAdapter<>(data, new VulkanImageLoader());
+		final ImageData image = loader.load("cubemap_vulkan.ktx2");
+		if(image.layers() != Image.CUBEMAP_ARRAY_LAYERS) throw new IllegalArgumentException("Invalid cubemap image");
 
 		// Determine image format
-		final VkFormat format = FormatBuilder.format(image.layout());
+		final VkFormat format = FormatBuilder.format(image);
 
 		// Create descriptor
 		final ImageDescriptor descriptor = new ImageDescriptor.Builder()
-				.type(VkImageType.IMAGE_TYPE_2D)
+				.type(VkImageType.TWO_D)
 				.aspect(VkImageAspect.COLOR)
-				.extents(new ImageExtents(image.size()))
+				.extents(image.extents())
 				.format(format)
 				.arrayLayers(Image.CUBEMAP_ARRAY_LAYERS)
+				.mipLevels(image.levels().size())
 				.build();
 
 		// Init image memory properties
@@ -129,31 +126,36 @@ public class SkyBoxConfiguration {
 				.submitAndWait(transfer);
 
 		// Load to staging buffer
+		// TODO - either load each layer or add helper
 		final VulkanBuffer staging = VulkanBuffer.staging(dev, allocator, image.data());
 
 		// Create copy command
-		final var copy = new ImageCopyCommand.Builder()
+//		final var copy =
+		new ImageCopyCommand.Builder()
 				.image(texture)
 				.buffer(staging)
-				.layout(VkImageLayout.TRANSFER_DST_OPTIMAL);
+				.layout(VkImageLayout.TRANSFER_DST_OPTIMAL)
+				.region(image)
+				.build()
+				.submitAndWait(transfer);
 
-		// Add copy region for each image
-		for(int n = 0; n < Image.CUBEMAP_ARRAY_LAYERS; ++n) {
-			final SubResource res = new SubResource.Builder(descriptor)
-					.baseArrayLayer(n)
-					.build();
-
-			final CopyRegion region = new CopyRegion.Builder()
-					.offset(image.offset(n))
-					.extents(texture.descriptor().extents())
-					.subresource(res)
-					.build();
-
-			copy.region(region);
-		}
-
-		// Copy staging to texture
-		copy.build().submitAndWait(transfer);
+//		// Add copy region for each image
+//		for(int n = 0; n < Image.CUBEMAP_ARRAY_LAYERS; ++n) {
+//			final SubResource res = new SubResource.Builder(descriptor)
+//					.baseArrayLayer(n)
+//					.build();
+//
+//			final CopyRegion region = new CopyRegion.Builder()
+//// TODO					.offset(image.offset(n))
+//					.extents(texture.descriptor().extents())
+//					.subresource(res)
+//					.build();
+//
+//			copy.region(region);
+//		}
+//
+//		// Copy staging to texture
+//		copy.build().submitAndWait(transfer);
 		staging.destroy();
 
 		// TODO - 500 -> 190 ms
@@ -210,7 +212,7 @@ public class SkyBoxConfiguration {
 
 		// Create texture view
 		return new View.Builder(texture)
-				.type(VkImageViewType.VIEW_TYPE_CUBE)
+				.type(VkImageViewType.CUBE)
 				.subresource(subresource)
 				.mapping(image)
 				.build();

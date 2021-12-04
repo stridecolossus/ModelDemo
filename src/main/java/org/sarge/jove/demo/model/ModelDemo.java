@@ -71,5 +71,3 @@ public class ModelDemo {
 	}
 }
 
-// https://github.com/SaschaWillems/Vulkan/blob/master/examples/texturecubemap/texturecubemap.cpp
-// https://www.humus.name/

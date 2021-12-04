@@ -2,7 +2,7 @@ package org.sarge.jove.demo.model;
 
 import java.io.IOException;
 
-import org.sarge.jove.io.Bufferable;
+import org.sarge.jove.common.Bufferable;
 import org.sarge.jove.io.DataSource;
 import org.sarge.jove.io.ResourceLoaderAdapter;
 import org.sarge.jove.model.Model;

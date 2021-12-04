@@ -3,15 +3,17 @@ package org.sarge.jove.demo.model;
 import static java.util.stream.Collectors.toList;
 
 import java.util.List;
+import java.util.Set;
 
 import org.sarge.jove.common.Dimensions;
+import org.sarge.jove.io.ImageData.Extents;
 import org.sarge.jove.platform.vulkan.*;
-import org.sarge.jove.platform.vulkan.common.ClearValue;
+import org.sarge.jove.platform.vulkan.common.ClearValue.DepthClearValue;
 import org.sarge.jove.platform.vulkan.core.LogicalDevice;
+import org.sarge.jove.platform.vulkan.core.PhysicalDevice;
 import org.sarge.jove.platform.vulkan.core.Surface;
 import org.sarge.jove.platform.vulkan.image.Image;
 import org.sarge.jove.platform.vulkan.image.ImageDescriptor;
-import org.sarge.jove.platform.vulkan.image.ImageExtents;
 import org.sarge.jove.platform.vulkan.image.View;
 import org.sarge.jove.platform.vulkan.memory.AllocationService;
 import org.sarge.jove.platform.vulkan.memory.MemoryProperties;
@@ -21,6 +23,7 @@ import org.sarge.jove.platform.vulkan.render.RenderPass;
 import org.sarge.jove.platform.vulkan.render.Subpass;
 import org.sarge.jove.platform.vulkan.render.Subpass.Reference;
 import org.sarge.jove.platform.vulkan.render.Swapchain;
+import org.sarge.jove.platform.vulkan.util.FormatSelector;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.context.annotation.Bean;
@@ -49,11 +52,17 @@ class PresentationConfiguration {
 
 	@Bean
 	public View depth(Swapchain swapchain, AllocationService allocator) {
+		// Select depth format
+		final var filter = FormatSelector.feature(Set.of(VkFormatFeature.DEPTH_STENCIL_ATTACHMENT), true);
+		final PhysicalDevice parent = dev.parent();
+		final FormatSelector selector = new FormatSelector(parent::properties, filter);
+		final VkFormat format = selector.select(List.of(VkFormat.D32_SFLOAT, VkFormat.D32_SFLOAT_S8_UINT, VkFormat.D24_UNORM_S8_UINT)).orElseThrow();
+
 		// Define depth image
 		final ImageDescriptor descriptor = new ImageDescriptor.Builder()
 				.aspect(VkImageAspect.DEPTH)
-				.extents(new ImageExtents(swapchain.extents()))
-				.format(Image.depth(dev.parent()))
+				.extents(new Extents(swapchain.extents()))
+				.format(format)
 				.build();
 
 		// Init properties
@@ -71,8 +80,8 @@ class PresentationConfiguration {
 
 		// Create depth view
 		return new View.Builder(image)
-				.clear(ClearValue.DEPTH)
-				.build();
+				.build()
+				.clear(DepthClearValue.DEFAULT);
 	}
 
 	@Bean
