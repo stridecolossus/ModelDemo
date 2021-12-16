@@ -4,12 +4,12 @@ import java.io.IOException;
 import java.util.List;
 
 import org.sarge.jove.common.Rectangle;
-import org.sarge.jove.geometry.Point;
 import org.sarge.jove.io.DataSource;
 import org.sarge.jove.io.ImageData;
 import org.sarge.jove.io.ResourceLoaderAdapter;
 import org.sarge.jove.model.CubeBuilder;
 import org.sarge.jove.model.Model;
+import org.sarge.jove.model.Vertex.Component;
 import org.sarge.jove.platform.vulkan.*;
 import org.sarge.jove.platform.vulkan.core.Command.Pool;
 import org.sarge.jove.platform.vulkan.core.LogicalDevice;
@@ -46,7 +46,10 @@ public class SkyBoxConfiguration {
 
 	@Bean
 	public static Model skybox() {
-		return new CubeBuilder(List.of(Point.LAYOUT)).build();
+		return new CubeBuilder()
+				.build()
+				.transform(Component.POSITION, Component.COORDINATE);
+		// TODO - transform
 	}
 
 	@Bean
@@ -247,18 +250,18 @@ public class SkyBoxConfiguration {
 					.shader(skyboxFragment)
 					.build()
 				.input()
-					.add(skybox.header().layout())
+					.add(skybox.layout())
 					.build()
 				.assembly()
-					.topology(skybox.header().primitive())
+					.topology(skybox.primitive())
 					.build()
 				.depth()
 					.enable(true)
 					.write(false)
 					.build()
-				.rasterizer()
-					.cull(VkCullMode.FRONT)
-					.build()
+//				.rasterizer()
+//					.cull(VkCullMode.FRONT)
+//					.build()
 				.build(dev);
 	}
 }

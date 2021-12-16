@@ -42,7 +42,7 @@ public class ModelConfiguration {
 
 	@Bean
 	public VulkanBuffer index(Model model) {
-		return buffer(model.index().get(), VkBufferUsage.INDEX_BUFFER);
+		return buffer(model.index(), VkBufferUsage.INDEX_BUFFER);
 	}
 
 //	@Bean
