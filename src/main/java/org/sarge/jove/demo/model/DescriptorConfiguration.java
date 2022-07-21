@@ -2,25 +2,19 @@ package org.sarge.jove.demo.model;
 
 import java.util.List;
 
-import org.sarge.jove.platform.vulkan.VkDescriptorType;
-import org.sarge.jove.platform.vulkan.VkShaderStage;
+import org.sarge.jove.platform.vulkan.*;
 import org.sarge.jove.platform.vulkan.core.LogicalDevice;
-import org.sarge.jove.platform.vulkan.image.Sampler;
-import org.sarge.jove.platform.vulkan.image.View;
-import org.sarge.jove.platform.vulkan.render.Binding;
-import org.sarge.jove.platform.vulkan.render.DescriptorLayout;
-import org.sarge.jove.platform.vulkan.render.DescriptorPool;
-import org.sarge.jove.platform.vulkan.render.DescriptorSet;
+import org.sarge.jove.platform.vulkan.image.*;
+import org.sarge.jove.platform.vulkan.render.*;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.context.annotation.Bean;
-import org.springframework.context.annotation.Configuration;
+import org.springframework.context.annotation.*;
 
 @Configuration
 public class DescriptorConfiguration {
 	@Autowired private LogicalDevice dev;
 	@Autowired private ApplicationConfiguration cfg;
 
-	private final Binding samplerBinding = new Binding.Builder()
+	private final ResourceBinding samplerBinding = new ResourceBinding.Builder()
 			.binding(0)
 			.type(VkDescriptorType.COMBINED_IMAGE_SAMPLER)
 			.stage(VkShaderStage.FRAGMENT)

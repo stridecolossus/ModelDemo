@@ -1,37 +1,23 @@
 package org.sarge.jove.demo.model;
 
-import java.util.ArrayList;
-import java.util.List;
+import java.util.*;
 import java.util.function.Supplier;
 
 import javax.annotation.PreDestroy;
 
-import org.sarge.jove.control.FrameCounter;
-import org.sarge.jove.control.FrameThrottle;
-import org.sarge.jove.control.FrameTracker;
+import org.sarge.jove.control.*;
 import org.sarge.jove.model.Model;
-import org.sarge.jove.platform.vulkan.VkIndexType;
 import org.sarge.jove.platform.vulkan.VkPipelineStage;
 import org.sarge.jove.platform.vulkan.common.Queue;
-import org.sarge.jove.platform.vulkan.core.Command;
-import org.sarge.jove.platform.vulkan.core.LogicalDevice;
-import org.sarge.jove.platform.vulkan.core.VulkanBuffer;
-import org.sarge.jove.platform.vulkan.pipeline.Pipeline;
-import org.sarge.jove.platform.vulkan.pipeline.PushUpdateCommand;
-import org.sarge.jove.platform.vulkan.render.DefaultFrameRenderer;
-import org.sarge.jove.platform.vulkan.render.DescriptorSet;
-import org.sarge.jove.platform.vulkan.render.DrawCommand;
-import org.sarge.jove.platform.vulkan.render.FrameBuffer;
-import org.sarge.jove.platform.vulkan.render.FrameBuilder;
+import org.sarge.jove.platform.vulkan.core.*;
+import org.sarge.jove.platform.vulkan.pipeline.*;
+import org.sarge.jove.platform.vulkan.render.*;
 import org.sarge.jove.platform.vulkan.render.FrameBuilder.Recorder;
-import org.sarge.jove.platform.vulkan.render.Swapchain;
-import org.sarge.jove.platform.vulkan.render.VulkanFrame;
 import org.sarge.jove.platform.vulkan.render.VulkanFrame.FrameRenderer;
 import org.sarge.jove.scene.RenderLoop.Task;
 import org.sarge.jove.scene.RenderTask;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.context.annotation.Bean;
-import org.springframework.context.annotation.Configuration;
+import org.springframework.context.annotation.*;
 
 @Configuration
 public class RenderConfiguration {
@@ -47,7 +33,7 @@ public class RenderConfiguration {
 	}
 
 	@Bean
-	static Recorder recorder(Pipeline pipeline, List<DescriptorSet> descriptors, VulkanBuffer vbo, VulkanBuffer index, Model model) {
+	static Recorder recorder(Pipeline pipeline, List<DescriptorSet> descriptors, VertexBuffer vbo, IndexBuffer index, Model model) {
 		final DescriptorSet ds = descriptors.get(0); // TODO
 		final DrawCommand draw = DrawCommand.of(model);
 
@@ -55,14 +41,14 @@ public class RenderConfiguration {
 			buffer
 					.add(pipeline.bind())
 					.add(ds.bind(pipeline.layout()))
-					.add(vbo.bindVertexBuffer(0))
-					.add(index.bindIndexBuffer(VkIndexType.UINT32))
+					.add(vbo.bind(0))
+					.add(index.bind(0))
 					.add(draw);
 		};
 	}
 
 	@Bean
-	public Task render(Swapchain swapchain, List<Recorder> recorders, Queue presentation, PushUpdateCommand update) {
+	public Task render(Swapchain swapchain, List<Recorder> recorders, Queue presentation, PushConstantUpdateCommand update) {
 		final FrameRenderer[] array = new FrameRenderer[2];
 		for(int n = 0; n < 2; ++n) {
 			final Command.Pool pool = Command.Pool.create(dev, graphics);
@@ -88,7 +74,7 @@ public class RenderConfiguration {
 		}
 
 		final Supplier<VulkanFrame> frameFactory = () -> new VulkanFrame(swapchain, presentation, n -> array[n]);
-		return new RenderTask(swapchain.count(), frameFactory);
+		return new RenderTask(swapchain.attachments().size(), frameFactory);
 	}
 
 	@Bean

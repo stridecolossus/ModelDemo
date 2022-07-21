@@ -4,39 +4,20 @@ import java.io.IOException;
 import java.util.List;
 
 import org.sarge.jove.common.Rectangle;
-import org.sarge.jove.io.DataSource;
-import org.sarge.jove.io.ImageData;
-import org.sarge.jove.io.ResourceLoaderAdapter;
-import org.sarge.jove.model.CubeBuilder;
-import org.sarge.jove.model.Model;
-import org.sarge.jove.model.Vertex.Component;
+import org.sarge.jove.io.*;
+import org.sarge.jove.model.*;
 import org.sarge.jove.platform.vulkan.*;
+import org.sarge.jove.platform.vulkan.core.*;
 import org.sarge.jove.platform.vulkan.core.Command.Pool;
-import org.sarge.jove.platform.vulkan.core.LogicalDevice;
-import org.sarge.jove.platform.vulkan.core.VulkanBuffer;
-import org.sarge.jove.platform.vulkan.image.Image;
-import org.sarge.jove.platform.vulkan.image.ImageCopyCommand;
-import org.sarge.jove.platform.vulkan.image.ImageDescriptor;
-import org.sarge.jove.platform.vulkan.image.Sampler;
+import org.sarge.jove.platform.vulkan.image.*;
 import org.sarge.jove.platform.vulkan.image.Sampler.Wrap;
-import org.sarge.jove.platform.vulkan.image.SubResource;
-import org.sarge.jove.platform.vulkan.image.View;
-import org.sarge.jove.platform.vulkan.image.VulkanImageLoader;
-import org.sarge.jove.platform.vulkan.memory.AllocationService;
-import org.sarge.jove.platform.vulkan.memory.MemoryProperties;
-import org.sarge.jove.platform.vulkan.pipeline.Barrier;
-import org.sarge.jove.platform.vulkan.pipeline.Pipeline;
-import org.sarge.jove.platform.vulkan.pipeline.PipelineLayout;
-import org.sarge.jove.platform.vulkan.pipeline.Shader;
-import org.sarge.jove.platform.vulkan.render.DescriptorSet;
-import org.sarge.jove.platform.vulkan.render.DrawCommand;
+import org.sarge.jove.platform.vulkan.memory.*;
+import org.sarge.jove.platform.vulkan.pipeline.*;
+import org.sarge.jove.platform.vulkan.render.*;
 import org.sarge.jove.platform.vulkan.render.FrameBuilder.Recorder;
-import org.sarge.jove.platform.vulkan.render.RenderPass;
-import org.sarge.jove.platform.vulkan.render.Swapchain;
 import org.sarge.jove.platform.vulkan.util.FormatBuilder;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.context.annotation.Bean;
-import org.springframework.context.annotation.Configuration;
+import org.springframework.context.annotation.*;
 
 @Configuration
 public class SkyBoxConfiguration {
@@ -47,8 +28,8 @@ public class SkyBoxConfiguration {
 	@Bean
 	public static Model skybox() {
 		return new CubeBuilder()
-				.build()
-				.transform(Component.POSITION, Component.COORDINATE);
+				.build();
+				//.transform(Component.POSITION, Component.COORDINATE);
 		// TODO - transform
 	}
 
@@ -60,7 +41,7 @@ public class SkyBoxConfiguration {
 	}
 
 	@Bean
-	public static Recorder skyboxRecorder(Pipeline skyboxPipeline, List<DescriptorSet> skyboxDescriptors, VulkanBuffer skyboxVertexBuffer, Model skybox) {
+	public static Recorder skyboxRecorder(Pipeline skyboxPipeline, List<DescriptorSet> skyboxDescriptors, VertexBuffer skyboxVertexBuffer, Model skybox) {
 		final DescriptorSet ds = skyboxDescriptors.get(0);
 		final DrawCommand draw = DrawCommand.of(skybox);
 
@@ -68,7 +49,7 @@ public class SkyBoxConfiguration {
 			buffer
 					.add(skyboxPipeline.bind())
 					.add(ds.bind(skyboxPipeline.layout()))
-					.add(skyboxVertexBuffer.bindVertexBuffer(0))
+					.add(skyboxVertexBuffer.bind(0))
 					.add(draw);
 		};
 	}
@@ -104,9 +85,9 @@ public class SkyBoxConfiguration {
 				.build();
 
 		// Init image memory properties
-		final var props = new MemoryProperties.Builder<VkImageUsage>()
-				.usage(VkImageUsage.TRANSFER_DST)
-				.usage(VkImageUsage.SAMPLED)
+		final var props = new MemoryProperties.Builder<VkImageUsageFlag>()
+				.usage(VkImageUsageFlag.TRANSFER_DST)
+				.usage(VkImageUsageFlag.SAMPLED)
 				.required(VkMemoryProperty.DEVICE_LOCAL)
 				.build();
 
@@ -217,7 +198,7 @@ public class SkyBoxConfiguration {
 		return new View.Builder(texture)
 				.type(VkImageViewType.CUBE)
 				.subresource(subresource)
-				.mapping(image)
+				.mapping(ComponentMapping.of(image.components()))
 				.build();
 	}
 
@@ -239,10 +220,7 @@ public class SkyBoxConfiguration {
 		return new Pipeline.Builder()
 				.layout(pipelineLayout)
 				.pass(pass)
-				.viewport()
-					.flip(true)
-					.viewport(viewport, true)
-					.build()
+				.viewport(viewport)
 				.shader(VkShaderStage.VERTEX)
 					.shader(skyboxVertex)
 					.build()
@@ -250,10 +228,10 @@ public class SkyBoxConfiguration {
 					.shader(skyboxFragment)
 					.build()
 				.input()
-					.add(skybox.layout())
+					.add(skybox.header().layout())
 					.build()
 				.assembly()
-					.topology(skybox.primitive())
+					.topology(skybox.header().primitive())
 					.build()
 				.depth()
 					.enable(true)
@@ -262,6 +240,6 @@ public class SkyBoxConfiguration {
 //				.rasterizer()
 //					.cull(VkCullMode.FRONT)
 //					.build()
-				.build(dev);
+				.build(null, dev);
 	}
 }

@@ -2,33 +2,16 @@ package org.sarge.jove.demo.model;
 
 import java.io.IOException;
 
-import org.sarge.jove.io.DataSource;
-import org.sarge.jove.io.ImageData;
-import org.sarge.jove.io.ResourceLoaderAdapter;
-import org.sarge.jove.platform.vulkan.VkAccess;
-import org.sarge.jove.platform.vulkan.VkFormat;
-import org.sarge.jove.platform.vulkan.VkImageAspect;
-import org.sarge.jove.platform.vulkan.VkImageLayout;
-import org.sarge.jove.platform.vulkan.VkImageType;
-import org.sarge.jove.platform.vulkan.VkImageUsage;
-import org.sarge.jove.platform.vulkan.VkMemoryProperty;
-import org.sarge.jove.platform.vulkan.VkPipelineStage;
+import org.sarge.jove.io.*;
+import org.sarge.jove.platform.vulkan.*;
+import org.sarge.jove.platform.vulkan.core.*;
 import org.sarge.jove.platform.vulkan.core.Command.Pool;
-import org.sarge.jove.platform.vulkan.core.LogicalDevice;
-import org.sarge.jove.platform.vulkan.core.VulkanBuffer;
-import org.sarge.jove.platform.vulkan.image.Image;
-import org.sarge.jove.platform.vulkan.image.ImageCopyCommand;
-import org.sarge.jove.platform.vulkan.image.ImageDescriptor;
-import org.sarge.jove.platform.vulkan.image.Sampler;
-import org.sarge.jove.platform.vulkan.image.View;
-import org.sarge.jove.platform.vulkan.image.VulkanImageLoader;
-import org.sarge.jove.platform.vulkan.memory.AllocationService;
-import org.sarge.jove.platform.vulkan.memory.MemoryProperties;
+import org.sarge.jove.platform.vulkan.image.*;
+import org.sarge.jove.platform.vulkan.memory.*;
 import org.sarge.jove.platform.vulkan.pipeline.Barrier;
 import org.sarge.jove.platform.vulkan.util.FormatBuilder;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.context.annotation.Bean;
-import org.springframework.context.annotation.Configuration;
+import org.springframework.context.annotation.*;
 
 @Configuration
 public class TextureConfiguration {
@@ -68,9 +51,9 @@ public class TextureConfiguration {
 				.build();
 
 		// Init image memory properties
-		final var props = new MemoryProperties.Builder<VkImageUsage>()
-				.usage(VkImageUsage.TRANSFER_DST)
-				.usage(VkImageUsage.SAMPLED)
+		final var props = new MemoryProperties.Builder<VkImageUsageFlag>()
+				.usage(VkImageUsageFlag.TRANSFER_DST)
+				.usage(VkImageUsageFlag.SAMPLED)
 				.required(VkMemoryProperty.DEVICE_LOCAL)
 				.build();
 
@@ -119,9 +102,11 @@ public class TextureConfiguration {
 				.build()
 				.submitAndWait(transfer);
 
+
+
 		// Create texture view
 		return new View.Builder(texture)
-				.mapping(image)
+				.mapping(ComponentMapping.of(image.components()))
 				.build();
 	}
 }

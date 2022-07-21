@@ -1,25 +1,16 @@
 package org.sarge.jove.demo.model;
 
-import org.sarge.jove.common.BufferWrapper;
+import java.nio.ByteBuffer;
+
 import org.sarge.jove.control.ActionBindings;
-import org.sarge.jove.geometry.Matrix;
-import org.sarge.jove.geometry.Rotation;
-import org.sarge.jove.geometry.Rotation.DefaultRotation;
-import org.sarge.jove.geometry.Vector;
-import org.sarge.jove.platform.desktop.KeyboardDevice;
-import org.sarge.jove.platform.desktop.MouseDevice;
-import org.sarge.jove.platform.desktop.Window;
-import org.sarge.jove.platform.vulkan.pipeline.PipelineLayout;
-import org.sarge.jove.platform.vulkan.pipeline.PushUpdateCommand;
+import org.sarge.jove.geometry.*;
+import org.sarge.jove.platform.desktop.*;
+import org.sarge.jove.platform.vulkan.pipeline.*;
 import org.sarge.jove.platform.vulkan.render.Swapchain;
-import org.sarge.jove.scene.Camera;
-import org.sarge.jove.scene.OrbitalCameraController;
-import org.sarge.jove.scene.Projection;
-import org.sarge.jove.scene.RenderLoop;
+import org.sarge.jove.scene.*;
 import org.sarge.jove.scene.RenderLoop.Task;
-import org.sarge.jove.util.MathsUtil;
-import org.springframework.context.annotation.Bean;
-import org.springframework.context.annotation.Configuration;
+import org.sarge.jove.util.*;
+import org.springframework.context.annotation.*;
 
 @Configuration
 public class CameraConfiguration {
@@ -82,27 +73,27 @@ public class CameraConfiguration {
 //	}
 
 	@Bean
-	public static PushUpdateCommand update(PipelineLayout layout) {
-		return PushUpdateCommand.of(layout);
+	public static PushConstantUpdateCommand update(PipelineLayout layout) {
+		return PushConstantUpdateCommand.of(layout);
 	}
 
 	@Bean
-	public Task matrix(PushUpdateCommand update) {
+	public Task matrix(PushConstantUpdateCommand update) {
 		// Init model rotation
 		// TODO - can we bake these into the controller as offsets?
-		final Matrix x = Rotation.matrix(new DefaultRotation(Vector.X, MathsUtil.toRadians(-90)));
-		final Matrix y = Rotation.matrix(new DefaultRotation(Vector.Y, MathsUtil.toRadians(120)));
+		final Matrix x = Rotation.matrix(Vector.X, MathsUtil.toRadians(-90));
+		final Matrix y = Rotation.matrix(Vector.Y, MathsUtil.toRadians(120));
 		final Matrix model = y.multiply(x);
 
 		// Add projection matrix
-		final BufferWrapper buffer = new BufferWrapper(update.data());
-		buffer.insert(2, projection);
+		BufferHelper.insert(2, projection, update.data());
 
 		// Update modelview matrix
 		return () -> {
-			buffer.rewind();
-			buffer.append(model);
-			buffer.append(cam.matrix());
+			final ByteBuffer bb = update.data();
+			bb.rewind();
+			model.buffer(bb);
+			cam.matrix().buffer(bb);
 		};
 	}
 }

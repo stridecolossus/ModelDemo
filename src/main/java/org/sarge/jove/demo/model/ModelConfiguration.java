@@ -3,20 +3,14 @@ package org.sarge.jove.demo.model;
 import java.io.IOException;
 
 import org.sarge.jove.common.Bufferable;
-import org.sarge.jove.io.DataSource;
-import org.sarge.jove.io.ResourceLoaderAdapter;
-import org.sarge.jove.model.Model;
-import org.sarge.jove.model.ModelLoader;
-import org.sarge.jove.platform.vulkan.VkBufferUsage;
-import org.sarge.jove.platform.vulkan.VkMemoryProperty;
+import org.sarge.jove.io.*;
+import org.sarge.jove.model.*;
+import org.sarge.jove.platform.vulkan.*;
+import org.sarge.jove.platform.vulkan.core.*;
 import org.sarge.jove.platform.vulkan.core.Command.Pool;
-import org.sarge.jove.platform.vulkan.core.LogicalDevice;
-import org.sarge.jove.platform.vulkan.core.VulkanBuffer;
-import org.sarge.jove.platform.vulkan.memory.AllocationService;
-import org.sarge.jove.platform.vulkan.memory.MemoryProperties;
+import org.sarge.jove.platform.vulkan.memory.*;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.context.annotation.Bean;
-import org.springframework.context.annotation.Configuration;
+import org.springframework.context.annotation.*;
 
 @Configuration
 public class ModelConfiguration {
@@ -36,13 +30,15 @@ public class ModelConfiguration {
 	}
 
 	@Bean
-	public VulkanBuffer vbo(Model model) {
-		return buffer(model.vertices(), VkBufferUsage.VERTEX_BUFFER);
+	public VertexBuffer vbo(Model model) {
+		final VulkanBuffer buffer = buffer(model.vertices(), VkBufferUsageFlag.VERTEX_BUFFER);
+		return new VertexBuffer(buffer);
 	}
 
 	@Bean
 	public VulkanBuffer index(Model model) {
-		return buffer(model.index(), VkBufferUsage.INDEX_BUFFER);
+		final VulkanBuffer buffer = buffer(model.index().get(), VkBufferUsageFlag.INDEX_BUFFER);
+		return new IndexBuffer(buffer, true); // TODO - should be inferred
 	}
 
 //	@Bean
@@ -65,17 +61,18 @@ public class ModelConfiguration {
 //	}
 
 	@Bean
-	public VulkanBuffer skyboxVertexBuffer(Model skybox) {
-		return buffer(skybox.vertices(), VkBufferUsage.VERTEX_BUFFER);
+	public VertexBuffer skyboxVertexBuffer(Model skybox) {
+		final VulkanBuffer buffer = buffer(skybox.vertices(), VkBufferUsageFlag.VERTEX_BUFFER);
+		return new VertexBuffer(buffer);
 	}
 
-	protected VulkanBuffer buffer(Bufferable data, VkBufferUsage usage) {
+	protected VulkanBuffer buffer(Bufferable data, VkBufferUsageFlag usage) {
 		// Create staging buffer
 		final VulkanBuffer staging = VulkanBuffer.staging(dev, allocator, data);
 
 		// Init buffer memory properties
-		final MemoryProperties<VkBufferUsage> props = new MemoryProperties.Builder<VkBufferUsage>()
-				.usage(VkBufferUsage.TRANSFER_DST)
+		final MemoryProperties<VkBufferUsageFlag> props = new MemoryProperties.Builder<VkBufferUsageFlag>()
+				.usage(VkBufferUsageFlag.TRANSFER_DST)
 				.usage(usage)
 				.required(VkMemoryProperty.DEVICE_LOCAL)
 				.build();
