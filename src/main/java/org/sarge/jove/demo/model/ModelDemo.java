@@ -8,7 +8,7 @@ import javax.annotation.PreDestroy;
 import org.apache.commons.lang3.builder.*;
 import org.sarge.jove.common.TransientObject;
 import org.sarge.jove.io.*;
-import org.sarge.jove.platform.desktop.*;
+import org.sarge.jove.platform.desktop.Desktop;
 import org.sarge.jove.platform.vulkan.core.LogicalDevice;
 import org.springframework.beans.BeansException;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -49,11 +49,6 @@ public class ModelDemo {
 	@PreDestroy
 	void destroy() {
 		dev.waitIdle();
-	}
-
-	@Autowired
-	void listener(Window window) {
-		window.keyboard().keyboard().bind(button -> System.exit(0));
 	}
 
 	@Bean
