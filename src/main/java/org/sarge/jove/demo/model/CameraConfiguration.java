@@ -1,15 +1,15 @@
 package org.sarge.jove.demo.model;
 
-import java.nio.ByteBuffer;
-
-import org.sarge.jove.control.ActionBindings;
+import org.sarge.jove.control.FrameListener;
 import org.sarge.jove.geometry.*;
 import org.sarge.jove.platform.desktop.*;
-import org.sarge.jove.platform.vulkan.pipeline.*;
-import org.sarge.jove.platform.vulkan.render.Swapchain;
+import org.sarge.jove.platform.vulkan.*;
+import org.sarge.jove.platform.vulkan.core.*;
+import org.sarge.jove.platform.vulkan.memory.*;
+import org.sarge.jove.platform.vulkan.render.*;
 import org.sarge.jove.scene.*;
-import org.sarge.jove.scene.RenderLoop.Task;
-import org.sarge.jove.util.*;
+import org.sarge.jove.util.MathsUtil;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.annotation.*;
 
 @Configuration
@@ -25,75 +25,38 @@ public class CameraConfiguration {
 		controller.scale(0.25f);
 	}
 
-	@Bean
-	public ActionBindings bindings(Window window, RenderLoop loop) {
-		// Bind stop action
-		final ActionBindings bindings = new ActionBindings();
-		final KeyboardDevice keyboard = window.keyboard();
-		keyboard.bind(bindings);
-		bindings.bind(keyboard.key("ESCAPE"), loop::stop);
+	@Autowired
+	void stop(Window window) {
+		window.keyboard().keyboard().bind(e -> System.exit(0));
+	}
 
-		// Bind camera controller
+	@Autowired
+	void controller(Window window) {
 		final MouseDevice mouse = window.mouse();
-		bindings.bind(mouse.pointer(), controller::update);
-		bindings.bind(mouse.wheel(), controller::zoom);
-
-		return bindings;
-	}
-
-//	@Bean
-//	public static VulkanBuffer uniform(LogicalDevice dev, AllocationService allocator) {
-//		final MemoryProperties<VkBufferUsage> props = new MemoryProperties.Builder<VkBufferUsage>()
-//				.usage(VkBufferUsage.UNIFORM_BUFFER)
-//				.required(VkMemoryProperty.HOST_VISIBLE)
-//				.required(VkMemoryProperty.HOST_COHERENT)
-//				.build();
-//
-//		return VulkanBuffer.create(dev, allocator, 3 * Matrix.IDENTITY.length(), props);
-//	}
-//
-//	@Bean
-//	public Task matrix(PipelineLayout layout) {
-//		// Init model rotation
-//		// TODO - can we bake these into the controller as offsets?
-//		final Matrix x = Rotation.matrix(Vector.X, MathsUtil.toRadians(-90));
-//		final Matrix y = Rotation.matrix(Vector.Y, MathsUtil.toRadians(120));
-//		final Matrix model = y.multiply(x);
-//
-//		// Add projection matrix
-//		final BufferWrapper buffer = new BufferWrapper(uniform.buffer());
-//		buffer.insert(2, projection);
-//
-//		// Update modelview matrix
-//		return () -> {
-//			buffer.rewind();
-//			buffer.append(model);
-//			buffer.append(cam.matrix());
-//		};
-//	}
-
-	@Bean
-	public static PushConstantUpdateCommand update(PipelineLayout layout) {
-		return PushConstantUpdateCommand.of(layout);
+		mouse.pointer().bind(pos -> controller.update(pos.x(), pos.y()));
+		mouse.wheel().bind(axis -> controller.zoom(axis.value()));
 	}
 
 	@Bean
-	public Task matrix(PushConstantUpdateCommand update) {
-		// Init model rotation
-		// TODO - can we bake these into the controller as offsets?
-		final Matrix x = Rotation.matrix(Vector.X, MathsUtil.toRadians(-90));
-		final Matrix y = Rotation.matrix(Vector.Y, MathsUtil.toRadians(120));
-		final Matrix model = y.multiply(x);
+	public ResourceBuffer uniform(LogicalDevice dev, AllocationService allocator) {
+		final var props = new MemoryProperties.Builder<VkBufferUsageFlag>()
+				.usage(VkBufferUsageFlag.UNIFORM_BUFFER)
+				.required(VkMemoryProperty.HOST_VISIBLE)
+				.build();
 
-		// Add projection matrix
-		BufferHelper.insert(2, projection, update.data());
+		final long len = Matrix.IDENTITY.length();
+		final VulkanBuffer buffer = VulkanBuffer.create(dev, allocator, len, props);
+		return new ResourceBuffer(buffer, VkDescriptorType.UNIFORM_BUFFER, 0);
+	}
 
-		// Update modelview matrix
-		return () -> {
-			final ByteBuffer bb = update.data();
-			bb.rewind();
-			model.buffer(bb);
-			cam.matrix().buffer(bb);
+	@Bean
+	public FrameListener update(ResourceBuffer uniform) {
+		return (start, end) -> {
+			final Matrix tilt = Rotation.of(Vector.X, MathsUtil.toRadians(-90)).matrix();
+			final Matrix rot = Rotation.of(Vector.Y, MathsUtil.toRadians(120)).matrix();
+			final Matrix model = rot.multiply(tilt);
+			final Matrix matrix = projection.multiply(cam.matrix()).multiply(model);
+			matrix.buffer(uniform.buffer());
 		};
 	}
 }

@@ -1,10 +1,12 @@
 package org.sarge.jove.demo.model;
 
-import java.io.IOException;
+import java.io.*;
+import java.nio.file.Paths;
 
 import org.sarge.jove.common.Bufferable;
 import org.sarge.jove.io.*;
 import org.sarge.jove.model.*;
+import org.sarge.jove.platform.obj.ObjectModelLoader;
 import org.sarge.jove.platform.vulkan.*;
 import org.sarge.jove.platform.vulkan.core.*;
 import org.sarge.jove.platform.vulkan.core.Command.Pool;
@@ -16,17 +18,17 @@ import org.springframework.context.annotation.*;
 public class ModelConfiguration {
 	@Autowired private LogicalDevice dev;
 	@Autowired private AllocationService allocator;
-	@Autowired private Pool transfer;
+	@Autowired private Pool graphics;
 
 	@Bean
 	public static Model model(DataSource data) throws IOException {
-//		final var adapter = new ResourceLoaderAdapter<>(data, new ObjectModelLoader());
-//		final Model model = adapter.load("chalet.obj").iterator().next();
-//		final ModelLoader loader2 = new ModelLoader();
-//		loader2.save(model, new DataOutputStream(new FileOutputStream("../Data/chalet.model")));
-
 		final var loader = new ResourceLoaderAdapter<>(data, new ModelLoader());
 		return loader.load("chalet.model");
+	}
+
+	@Bean
+	public static Model.Header header(Model model) {
+		return model.header();
 	}
 
 	@Bean
@@ -38,32 +40,7 @@ public class ModelConfiguration {
 	@Bean
 	public VulkanBuffer index(Model model) {
 		final VulkanBuffer buffer = buffer(model.index().get(), VkBufferUsageFlag.INDEX_BUFFER);
-		return new IndexBuffer(buffer, true); // TODO - should be inferred
-	}
-
-//	@Bean
-//	public VulkanBuffer instances() {
-//		final Bufferable data = new Bufferable() {
-//			@Override
-//			public int length() {
-//				return 3 * Point.LAYOUT.length();
-//			}
-//
-//			@Override
-//			public void buffer(ByteBuffer bb) {
-//				new Point(-1, 0, 0).buffer(bb);
-//				new Point(0, 0, -1).buffer(bb);
-//				new Point(1, 0, -2).buffer(bb);
-//			}
-//		};
-//
-//		return buffer(data, VkBufferUsage.VERTEX_BUFFER);
-//	}
-
-	@Bean
-	public VertexBuffer skyboxVertexBuffer(Model skybox) {
-		final VulkanBuffer buffer = buffer(skybox.vertices(), VkBufferUsageFlag.VERTEX_BUFFER);
-		return new VertexBuffer(buffer);
+		return new IndexBuffer(buffer, model.header().count());
 	}
 
 	protected VulkanBuffer buffer(Bufferable data, VkBufferUsageFlag usage) {
@@ -71,7 +48,7 @@ public class ModelConfiguration {
 		final VulkanBuffer staging = VulkanBuffer.staging(dev, allocator, data);
 
 		// Init buffer memory properties
-		final MemoryProperties<VkBufferUsageFlag> props = new MemoryProperties.Builder<VkBufferUsageFlag>()
+		final var props = new MemoryProperties.Builder<VkBufferUsageFlag>()
 				.usage(VkBufferUsageFlag.TRANSFER_DST)
 				.usage(usage)
 				.required(VkMemoryProperty.DEVICE_LOCAL)
@@ -81,11 +58,26 @@ public class ModelConfiguration {
 		final VulkanBuffer buffer = VulkanBuffer.create(dev, allocator, staging.length(), props);
 
 		// Copy staging to buffer
-		staging.copy(buffer).submitAndWait(transfer);
+		staging.copy(buffer).submit(graphics);
 
 		// Release staging
 		staging.destroy();
 
 		return buffer;
+	}
+
+	@SuppressWarnings("resource")
+	public static void main(String[] args) throws Exception {
+//		final var adapter = new ResourceLoaderAdapter<>(data, new ObjectModelLoader());
+//		final Model model = adapter.load("chalet.obj").iterator().next();
+//		final ModelLoader loader2 = new ModelLoader();
+//		loader2.save(model, new DataOutputStream(new FileOutputStream("../Data/chalet.model")));
+
+		final DataSource src = FileDataSource.home(Paths.get("workspace/Demo/Data"));
+		final var loader = new ResourceLoaderAdapter<>(src, new ObjectModelLoader());
+		final Model model = loader.load("chalet.obj").iterator().next();
+
+		final ModelLoader out = new ModelLoader();
+		out.save(model, new DataOutputStream(new FileOutputStream("/Users/Sarge/workspace/Demo/Data/chalet.model")));
 	}
 }

@@ -1,92 +1,115 @@
 package org.sarge.jove.demo.model;
 
-import java.util.*;
-import java.util.function.Supplier;
+import java.util.List;
+import java.util.concurrent.ScheduledExecutorService;
 
-import javax.annotation.PreDestroy;
-
-import org.sarge.jove.control.*;
 import org.sarge.jove.model.Model;
-import org.sarge.jove.platform.vulkan.VkPipelineStage;
-import org.sarge.jove.platform.vulkan.common.Queue;
+import org.sarge.jove.platform.vulkan.*;
 import org.sarge.jove.platform.vulkan.core.*;
+import org.sarge.jove.platform.vulkan.image.*;
+import org.sarge.jove.platform.vulkan.image.ClearValue.DepthClearValue;
+import org.sarge.jove.platform.vulkan.image.Image.Descriptor;
+import org.sarge.jove.platform.vulkan.memory.*;
 import org.sarge.jove.platform.vulkan.pipeline.*;
 import org.sarge.jove.platform.vulkan.render.*;
-import org.sarge.jove.platform.vulkan.render.FrameBuilder.Recorder;
-import org.sarge.jove.platform.vulkan.render.VulkanFrame.FrameRenderer;
-import org.sarge.jove.scene.RenderLoop.Task;
-import org.sarge.jove.scene.RenderTask;
-import org.springframework.beans.factory.annotation.Autowired;
+import org.sarge.jove.scene.RenderLoop;
 import org.springframework.context.annotation.*;
 
 @Configuration
 public class RenderConfiguration {
-	@Autowired private LogicalDevice dev;
-	@Autowired private Queue graphics;
-	@Autowired private List<FrameBuffer> buffers;
-	private final List<Command.Pool> pools = new ArrayList<>();
+	private final LogicalDevice dev;
+	private final VkFormat format;
 
-	@PreDestroy
-	void destroy() {
-		buffers.forEach(FrameBuffer::destroy);
-		pools.forEach(Command.Pool::destroy);
+	public RenderConfiguration(LogicalDevice dev) {
+	    final FormatSelector selector = new FormatSelector(dev.parent(), true, VkFormatFeature.DEPTH_STENCIL_ATTACHMENT);
+	    this.format = selector.select(VkFormat.D32_SFLOAT, VkFormat.D32_SFLOAT_S8_UINT, VkFormat.D24_UNORM_S8_UINT).orElseThrow();
+		this.dev = dev;
+	}
+
+	@Bean("pipeline.bind")
+	static Command pipeline(Pipeline pipeline) {
+		return pipeline.bind();
+	}
+
+	@Bean("descriptor.bind")
+	static Command descriptor(DescriptorSet set, PipelineLayout layout) {
+		return set.bind(layout);
+	}
+
+	@Bean("vbo.bind")
+	static Command vbo(VertexBuffer vbo) {
+		return vbo.bind(0);
+	}
+
+	@Bean("index.bind")
+	static Command vbo(IndexBuffer index) {
+		return index.bind(0);
 	}
 
 	@Bean
-	static Recorder recorder(Pipeline pipeline, List<DescriptorSet> descriptors, VertexBuffer vbo, IndexBuffer index, Model model) {
-		final DescriptorSet ds = descriptors.get(0); // TODO
-		final DrawCommand draw = DrawCommand.of(model);
-
-		return buffer -> {
-			buffer
-					.add(pipeline.bind())
-					.add(ds.bind(pipeline.layout()))
-					.add(vbo.bind(0))
-					.add(index.bind(0))
-					.add(draw);
-		};
+	static DrawCommand draw(Model model) {
+		return DrawCommand.of(model);
 	}
 
 	@Bean
-	public Task render(Swapchain swapchain, List<Recorder> recorders, Queue presentation, PushConstantUpdateCommand update) {
-		final FrameRenderer[] array = new FrameRenderer[2];
-		for(int n = 0; n < 2; ++n) {
-			final Command.Pool pool = Command.Pool.create(dev, graphics);
-			pools.add(pool); // TODO - urgh, maybe track in post processor? nasty tho
-
-			final Supplier<Command.Buffer> factory = () -> {
-				pool.reset();
-				return pool.allocate();
-			};
-
-			final Recorder delegate = seq -> {
-				//sequence.record(seq, 0);
-				seq.add(update);
-				for(Recorder r : recorders) {
-					r.record(seq);
-				}
-			};
-
-			final Recorder recorder = delegate.render(buffers.get(n));
-
-			final FrameBuilder builder = new FrameBuilder(factory, recorder);
-			array[n] = new DefaultFrameRenderer(builder, VkPipelineStage.COLOR_ATTACHMENT_OUTPUT);
-		}
-
-		final Supplier<VulkanFrame> frameFactory = () -> new VulkanFrame(swapchain, presentation, n -> array[n]);
-		return new RenderTask(swapchain.attachments().size(), frameFactory);
+	static RenderSequence sequence(List<Command> commands) {
+		return RenderSequence.of(commands);
 	}
 
 	@Bean
-	static FrameCounter counter() {
-		return new FrameCounter();
+	public View depth(Swapchain swapchain, AllocationService allocator) {
+		// Configure depth image
+	    final Descriptor descriptor = new Descriptor.Builder()
+	            .aspect(VkImageAspect.DEPTH)
+	            .extents(swapchain.extents())
+	            .format(format)
+	            .build();
+
+	    // Configure as device-local
+	    final var props = new MemoryProperties.Builder<VkImageUsageFlag>()
+		        .usage(VkImageUsageFlag.DEPTH_STENCIL_ATTACHMENT)
+		        .required(VkMemoryProperty.DEVICE_LOCAL)
+		        .build();
+
+	    // Create image
+	    final Image image = new DefaultImage.Builder()
+		        .descriptor(descriptor)
+		        .tiling(VkImageTiling.OPTIMAL)
+		        .properties(props)
+		        .build(dev, allocator);
+
+	    // Create view
+	    return View.of(image).clear(DepthClearValue.DEFAULT);
 	}
 
 	@Bean
-	public static Task tracker(FrameCounter counter) {
-		final FrameTracker tracker = new FrameTracker();
-		tracker.add(new FrameThrottle());
-		tracker.add(counter);
-		return tracker;
+	public RenderPass pass(Swapchain swapchain) {
+		final Attachment col = new Attachment.Builder()
+				.format(swapchain.format())
+				.load(VkAttachmentLoadOp.CLEAR)
+				.store(VkAttachmentStoreOp.STORE)
+				.finalLayout(VkImageLayout.PRESENT_SRC_KHR)
+				.build();
+
+	    final Attachment depth = new Attachment.Builder()
+			    .format(format)
+			    .load(VkAttachmentLoadOp.CLEAR)
+			    .finalLayout(VkImageLayout.DEPTH_STENCIL_ATTACHMENT_OPTIMAL)
+			    .build();
+
+		return new RenderPass.Builder()
+				.subpass()
+					.colour(col)
+					.depth(depth, VkImageLayout.DEPTH_STENCIL_ATTACHMENT_OPTIMAL)
+					.build()
+				.build(dev);
+	}
+
+	@Bean
+	public static RenderLoop loop(ScheduledExecutorService executor, FrameProcessor proc, RenderSequence seq) {
+		final Runnable task = () -> proc.render(seq);
+		final RenderLoop loop = new RenderLoop(executor);
+		loop.start(task);
+		return loop;
 	}
 }

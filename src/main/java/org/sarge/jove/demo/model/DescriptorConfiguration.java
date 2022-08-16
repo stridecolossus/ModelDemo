@@ -3,10 +3,12 @@ package org.sarge.jove.demo.model;
 import java.util.List;
 
 import org.sarge.jove.platform.vulkan.*;
+import org.sarge.jove.platform.vulkan.common.DescriptorResource;
 import org.sarge.jove.platform.vulkan.core.LogicalDevice;
 import org.sarge.jove.platform.vulkan.image.*;
 import org.sarge.jove.platform.vulkan.render.*;
-import org.springframework.beans.factory.annotation.Autowired;
+import org.sarge.jove.platform.vulkan.render.DescriptorLayout.Binding;
+import org.springframework.beans.factory.annotation.*;
 import org.springframework.context.annotation.*;
 
 @Configuration
@@ -14,26 +16,26 @@ public class DescriptorConfiguration {
 	@Autowired private LogicalDevice dev;
 	@Autowired private ApplicationConfiguration cfg;
 
-	private final ResourceBinding samplerBinding = new ResourceBinding.Builder()
+	private final Binding samplerBinding = new Binding.Builder()
 			.binding(0)
 			.type(VkDescriptorType.COMBINED_IMAGE_SAMPLER)
 			.stage(VkShaderStage.FRAGMENT)
 			.build();
 
-//	private final Binding uniformBinding = new Binding.Builder()
-//		    .binding(1)
-//		    .type(VkDescriptorType.UNIFORM_BUFFER)
-//		    .stage(VkShaderStage.VERTEX)
-//		    .build();
+	private final Binding uniformBinding = new Binding.Builder()
+		    .binding(1)
+		    .type(VkDescriptorType.UNIFORM_BUFFER)
+		    .stage(VkShaderStage.VERTEX)
+		    .build();
 
 	@Bean
 	public DescriptorLayout layout() {
-		return DescriptorLayout.create(dev, List.of(samplerBinding)); //, uniformBinding));
+		return DescriptorLayout.create(dev, List.of(samplerBinding, uniformBinding));
 	}
 
 	@Bean
-	public DescriptorPool descriptorPool() {
-		final int count = 2 * cfg.getFrameCount();
+	public DescriptorPool pool() {
+		final int count = cfg.getFrameCount();
 		return new DescriptorPool.Builder()
 				.add(VkDescriptorType.COMBINED_IMAGE_SAMPLER, count)
 				.add(VkDescriptorType.UNIFORM_BUFFER, count)
@@ -41,29 +43,18 @@ public class DescriptorConfiguration {
 				.build(dev);
 	}
 
-	@Bean
-	public List<DescriptorSet> descriptors(DescriptorPool pool, DescriptorLayout layout, Sampler sampler, View texture) { //, VulkanBuffer uniform) {
-		// Allocate descriptor set per frame-buffer
-		final List<DescriptorSet> descriptors = pool.allocate(layout, cfg.getFrameCount());
-
-		// Init resources
-		DescriptorSet.set(descriptors, samplerBinding, sampler.resource(texture));
-//		DescriptorSet.set(descriptors, uniformBinding, uniform.uniform());
-		DescriptorSet.update(dev, descriptors);
-
-		return descriptors;
+	@Bean("sampler.resource")
+	DescriptorResource sampler(Sampler sampler, View texture) {
+		return sampler.resource(texture);
 	}
 
+	// TODO - multiple sets!!!
 	@Bean
-	public List<DescriptorSet> skyboxDescriptors(DescriptorPool pool, DescriptorLayout layout, Sampler cubeSampler, View cubemap) { //, VulkanBuffer uniform) {
-		// Allocate descriptor set per frame-buffer
-		final List<DescriptorSet> descriptors = pool.allocate(layout, cfg.getFrameCount());
-
-		// Init resources
-		DescriptorSet.set(descriptors, samplerBinding, cubeSampler.resource(cubemap));
-//		DescriptorSet.set(descriptors, uniformBinding, uniform.uniform());
-		DescriptorSet.update(dev, descriptors);
-
-		return descriptors;
+	public DescriptorSet descriptor(DescriptorPool pool, DescriptorLayout layout, @Qualifier("sampler.resource") DescriptorResource sampler, ResourceBuffer uniform) {
+		final DescriptorSet set = pool.allocate(layout).iterator().next();
+		set.set(samplerBinding, sampler);
+		set.set(uniformBinding, uniform);
+		DescriptorSet.update(dev, List.of(set));
+		return set;
 	}
 }

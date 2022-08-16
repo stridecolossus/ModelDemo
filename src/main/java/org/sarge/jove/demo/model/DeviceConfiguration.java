@@ -7,7 +7,6 @@ import org.sarge.jove.platform.vulkan.core.*;
 import org.sarge.jove.platform.vulkan.core.LogicalDevice.RequiredQueue;
 import org.sarge.jove.platform.vulkan.core.PhysicalDevice.Selector;
 import org.sarge.jove.platform.vulkan.memory.*;
-import org.sarge.jove.platform.vulkan.render.Surface;
 import org.sarge.jove.platform.vulkan.util.*;
 import org.springframework.context.annotation.*;
 
@@ -15,18 +14,15 @@ import org.springframework.context.annotation.*;
 class DeviceConfiguration {
 	private final Selector graphics = Selector.of(VkQueueFlag.GRAPHICS);
 	private final Selector presentation;
+	private final DeviceFeatures features;
 
-	public DeviceConfiguration(Handle surface) {
-		presentation = Selector.of(surface);
+	public DeviceConfiguration(Handle surface, ApplicationConfiguration cfg) {
+		this.presentation = Selector.of(surface);
+		this.features = DeviceFeatures.of(cfg.getFeatures());
 	}
 
 	@Bean
-	static DeviceFeatures features(ApplicationConfiguration cfg) {
-		return DeviceFeatures.of(cfg.getFeatures());
-	}
-
-	@Bean
-	public PhysicalDevice physical(Instance instance, DeviceFeatures features) {
+	public PhysicalDevice physical(Instance instance) {
 		return new PhysicalDevice.Enumerator(instance)
 				.devices()
 				.filter(graphics)
@@ -37,12 +33,7 @@ class DeviceConfiguration {
 	}
 
 	@Bean
-	public static Surface surface(Handle surface, PhysicalDevice dev) {
-		return new Surface(surface, dev);
-	}
-
-	@Bean
-	public LogicalDevice device(PhysicalDevice dev, DeviceFeatures features) {
+	public LogicalDevice device(PhysicalDevice dev) {
 		return new LogicalDevice.Builder(dev)
 				.extension(VulkanLibrary.EXTENSION_SWAP_CHAIN)
 				.layer(ValidationLayer.STANDARD_VALIDATION)
@@ -52,36 +43,26 @@ class DeviceConfiguration {
 				.build();
 	}
 
-	@Bean
-	public Queue graphics(LogicalDevice dev) {
-		return dev.queue(graphics.select(dev.parent()));
+	private static Command.Pool pool(LogicalDevice dev, Selector selector) {
+		final Queue.Family family = selector.select(dev.parent());
+		final Queue queue = dev.queue(family);
+		return Command.Pool.create(dev, queue);
 	}
 
 	@Bean
-	public Queue presentation(LogicalDevice dev) {
-		return dev.queue(presentation.select(dev.parent()));
+	public Command.Pool graphics(LogicalDevice dev) {
+		return pool(dev, graphics);
 	}
 
 	@Bean
-	public static Command.Pool transfer(LogicalDevice dev, Queue graphics) {
-		return Command.Pool.create(dev, graphics);
+	public Command.Pool presentation(LogicalDevice dev) {
+		return pool(dev, presentation);
 	}
 
 	@Bean
-	public static MemorySelector selector(LogicalDevice dev) {
-		return MemorySelector.create(dev);
-	}
-
-	@Bean
-	public static Allocator allocator(LogicalDevice dev) {
+	public static AllocationService service(LogicalDevice dev) {
+		final MemorySelector selector = MemorySelector.create(dev);
 		final Allocator allocator = new DefaultAllocator(dev);
-		// TODO - pagination, pool, expanding
-		//return new PoolAllocator(allocator, Integer.MAX_VALUE);		// TODO
-		return allocator;
-	}
-
-	@Bean
-	public static AllocationService service(MemorySelector selector, Allocator allocator) {
 		return new AllocationService(selector, allocator);
 	}
 }

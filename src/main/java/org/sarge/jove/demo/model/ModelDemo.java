@@ -1,16 +1,15 @@
 package org.sarge.jove.demo.model;
 
-import java.util.List;
+import java.nio.file.Paths;
+import java.util.concurrent.*;
 
-import org.apache.commons.lang3.builder.ToStringBuilder;
-import org.apache.commons.lang3.builder.ToStringStyle;
-import org.sarge.jove.common.TransientNativeObject;
-import org.sarge.jove.io.ClasspathDataSource;
-import org.sarge.jove.io.DataSource;
-import org.sarge.jove.io.FileDataSource;
+import javax.annotation.PreDestroy;
+
+import org.apache.commons.lang3.builder.*;
+import org.sarge.jove.common.TransientObject;
+import org.sarge.jove.io.*;
+import org.sarge.jove.platform.desktop.*;
 import org.sarge.jove.platform.vulkan.core.LogicalDevice;
-import org.sarge.jove.scene.RenderLoop;
-import org.sarge.jove.scene.RenderLoop.Task;
 import org.springframework.beans.BeansException;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.config.DestructionAwareBeanPostProcessor;
@@ -18,35 +17,43 @@ import org.springframework.boot.CommandLineRunner;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
 import org.springframework.boot.builder.SpringApplicationBuilder;
 import org.springframework.context.annotation.Bean;
-import org.springframework.stereotype.Component;
 
 @SpringBootApplication
 public class ModelDemo {
+	@Autowired private LogicalDevice dev;
+
 	@Bean
 	public static DataSource classpath() {
 		return new ClasspathDataSource();
 	}
 
 	@Bean
-	public static DataSource data(ApplicationConfiguration cfg) {
-		return new FileDataSource(cfg.getDataDirectory());
+	public static DataSource data() {
+		return FileDataSource.home(Paths.get("workspace/Demo/Data"));
 	}
 
 	@Bean
-	public static RenderLoop loop(List<Task> tasks) {
-		return new RenderLoop(tasks);
+	public static ScheduledExecutorService executor() {
+		return Executors.newSingleThreadScheduledExecutor();
 	}
 
-	@Component
-	static class ApplicationLoop implements CommandLineRunner {
-		@Autowired private RenderLoop app;
-		@Autowired private LogicalDevice dev;
+	@Bean
+	static CommandLineRunner runner(Desktop desktop) {
+		return args -> {
+			while(true) {
+				desktop.poll();
+			}
+		};
+	}
 
-		@Override
-		public void run(String... args) throws Exception {
-			app.run();
-			dev.waitIdle();
-		}
+	@PreDestroy
+	void destroy() {
+		dev.waitIdle();
+	}
+
+	@Autowired
+	void listener(Window window) {
+		window.keyboard().keyboard().bind(button -> System.exit(0));
 	}
 
 	@Bean
@@ -54,7 +61,7 @@ public class ModelDemo {
 		return new DestructionAwareBeanPostProcessor() {
 			@Override
 			public void postProcessBeforeDestruction(Object bean, String beanName) throws BeansException {
-				if(bean instanceof TransientNativeObject obj) {
+				if(bean instanceof TransientObject obj && obj.isDestroyed()) {
 					obj.destroy();
 				}
 			}
