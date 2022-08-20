@@ -33,8 +33,8 @@ public class CameraConfiguration {
 	@Autowired
 	void controller(Window window) {
 		final MouseDevice mouse = window.mouse();
-		mouse.pointer().bind(pos -> controller.update(pos.x(), pos.y()));
-		mouse.wheel().bind(axis -> controller.zoom(axis.value()));
+		mouse.pointer().bind(controller::update);
+		mouse.wheel().bind(controller::zoom);
 	}
 
 	@Bean
