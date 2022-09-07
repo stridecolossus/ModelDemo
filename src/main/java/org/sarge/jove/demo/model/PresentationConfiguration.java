@@ -3,7 +3,7 @@ package org.sarge.jove.demo.model;
 import java.util.*;
 
 import org.sarge.jove.common.Handle;
-import org.sarge.jove.control.FrameListener;
+import org.sarge.jove.control.Frame;
 import org.sarge.jove.platform.vulkan.*;
 import org.sarge.jove.platform.vulkan.core.*;
 import org.sarge.jove.platform.vulkan.image.View;
@@ -37,17 +37,17 @@ class PresentationConfiguration {
 	}
 
 	@Bean
-	static FrameSet frames(Swapchain swapchain, RenderPass pass, View depth) {
-		return new FrameSet(swapchain, pass, List.of(depth));
+	static FrameBuffer.Group frames(Swapchain swapchain, RenderPass pass, View depth) {
+		return new FrameBuffer.Group(swapchain, pass, List.of(depth));
 	}
 
 	@Bean
-	static FrameBuilder builder(FrameSet frames, @Qualifier("graphics") Command.Pool pool) {
+	static FrameBuilder builder(FrameBuffer.Group frames, @Qualifier("graphics") Command.Pool pool) {
 		return new FrameBuilder(frames::buffer, pool::allocate, VkCommandBufferUsage.ONE_TIME_SUBMIT);
 	}
 
 	@Bean
-	FrameProcessor processor(Swapchain swapchain, FrameBuilder builder, Collection<FrameListener> listeners) {
+	FrameProcessor processor(Swapchain swapchain, FrameBuilder builder, Collection<Frame.Listener> listeners) {
 		final var proc = new FrameProcessor(swapchain, builder, cfg.getFrameCount());
 		listeners.forEach(proc::add);
 		return proc;

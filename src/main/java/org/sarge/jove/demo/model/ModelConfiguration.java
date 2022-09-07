@@ -27,11 +27,6 @@ public class ModelConfiguration {
 	}
 
 	@Bean
-	public static Model.Header header(Model model) {
-		return model.header();
-	}
-
-	@Bean
 	public VertexBuffer vbo(Model model) {
 		final VulkanBuffer buffer = buffer(model.vertices(), VkBufferUsageFlag.VERTEX_BUFFER);
 		return new VertexBuffer(buffer);
@@ -40,7 +35,7 @@ public class ModelConfiguration {
 	@Bean
 	public VulkanBuffer index(Model model) {
 		final VulkanBuffer buffer = buffer(model.index().get(), VkBufferUsageFlag.INDEX_BUFFER);
-		return new IndexBuffer(buffer, model.header().count());
+		return new IndexBuffer(buffer, model.count());
 	}
 
 	protected VulkanBuffer buffer(Bufferable data, VkBufferUsageFlag usage) {

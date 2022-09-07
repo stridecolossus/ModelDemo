@@ -37,7 +37,7 @@ class PipelineConfiguration {
 	}
 
 	@Bean
-	public Pipeline pipeline(RenderPass pass, Swapchain swapchain, Shader vertex, Shader fragment, PipelineLayout pipelineLayout, Model.Header model) {
+	public Pipeline pipeline(RenderPass pass, Swapchain swapchain, Shader vertex, Shader fragment, PipelineLayout pipelineLayout, Model model) {
 		final Rectangle viewport = new Rectangle(swapchain.extents());
 		return new Pipeline.Builder()
 				.layout(pipelineLayout)

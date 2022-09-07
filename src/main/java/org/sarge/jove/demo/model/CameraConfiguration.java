@@ -1,7 +1,8 @@
 package org.sarge.jove.demo.model;
 
-import org.sarge.jove.control.FrameListener;
+import org.sarge.jove.control.Frame;
 import org.sarge.jove.geometry.*;
+import org.sarge.jove.geometry.Rotation.AxisAngle;
 import org.sarge.jove.platform.desktop.*;
 import org.sarge.jove.platform.vulkan.*;
 import org.sarge.jove.platform.vulkan.core.*;
@@ -50,10 +51,10 @@ public class CameraConfiguration {
 	}
 
 	@Bean
-	public FrameListener update(ResourceBuffer uniform) {
-		return (start, end) -> {
-			final Matrix tilt = Rotation.of(Vector.X, MathsUtil.toRadians(-90)).matrix();
-			final Matrix rot = Rotation.of(Vector.Y, MathsUtil.toRadians(120)).matrix();
+	public Frame.Listener update(ResourceBuffer uniform) {
+		return () -> {
+			final Matrix tilt = new AxisAngle(Vector.X, MathsUtil.toRadians(-90)).matrix();
+			final Matrix rot = new AxisAngle(Vector.Y, MathsUtil.toRadians(120)).matrix();
 			final Matrix model = rot.multiply(tilt);
 			final Matrix matrix = projection.multiply(cam.matrix()).multiply(model);
 			matrix.buffer(uniform.buffer());

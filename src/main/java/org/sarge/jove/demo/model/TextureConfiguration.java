@@ -76,7 +76,7 @@ public class TextureConfiguration {
 		final VulkanBuffer staging = VulkanBuffer.staging(dev, allocator, image.data());
 
 		// Copy staging to image
-		new ImageCopyCommand.Builder()
+		new ImageTransferCommand.Builder()
 				.image(texture)
 				.buffer(staging)
 				.layout(VkImageLayout.TRANSFER_DST_OPTIMAL)
