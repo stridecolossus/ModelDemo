@@ -6,7 +6,6 @@ import org.sarge.jove.platform.vulkan.common.Queue;
 import org.sarge.jove.platform.vulkan.core.*;
 import org.sarge.jove.platform.vulkan.core.LogicalDevice.RequiredQueue;
 import org.sarge.jove.platform.vulkan.core.PhysicalDevice.Selector;
-import org.sarge.jove.platform.vulkan.memory.*;
 import org.sarge.jove.platform.vulkan.util.*;
 import org.springframework.context.annotation.*;
 
@@ -57,12 +56,5 @@ class DeviceConfiguration {
 	@Bean
 	public Command.Pool presentation(LogicalDevice dev) {
 		return pool(dev, presentation);
-	}
-
-	@Bean
-	public static AllocationService service(LogicalDevice dev) {
-		final MemorySelector selector = MemorySelector.create(dev);
-		final Allocator allocator = new DefaultAllocator(dev);
-		return new AllocationService(selector, allocator);
 	}
 }

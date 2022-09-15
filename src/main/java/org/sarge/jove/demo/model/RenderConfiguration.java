@@ -9,7 +9,7 @@ import org.sarge.jove.platform.vulkan.core.*;
 import org.sarge.jove.platform.vulkan.image.*;
 import org.sarge.jove.platform.vulkan.image.ClearValue.DepthClearValue;
 import org.sarge.jove.platform.vulkan.image.Image.Descriptor;
-import org.sarge.jove.platform.vulkan.memory.*;
+import org.sarge.jove.platform.vulkan.memory.MemoryProperties;
 import org.sarge.jove.platform.vulkan.pipeline.*;
 import org.sarge.jove.platform.vulkan.render.*;
 import org.sarge.jove.scene.RenderLoop;
@@ -57,7 +57,7 @@ public class RenderConfiguration {
 	}
 
 	@Bean
-	public View depth(Swapchain swapchain, AllocationService allocator) {
+	public View depth(Swapchain swapchain) {
 		// Configure depth image
 	    final Descriptor descriptor = new Descriptor.Builder()
 	            .aspect(VkImageAspect.DEPTH)
@@ -76,7 +76,7 @@ public class RenderConfiguration {
 		        .descriptor(descriptor)
 		        .tiling(VkImageTiling.OPTIMAL)
 		        .properties(props)
-		        .build(dev, allocator);
+		        .build(dev);
 
 	    // Create view
 	    return View.of(image).clear(DepthClearValue.DEFAULT);

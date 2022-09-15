@@ -6,7 +6,7 @@ import org.sarge.jove.geometry.Rotation.AxisAngle;
 import org.sarge.jove.platform.desktop.*;
 import org.sarge.jove.platform.vulkan.*;
 import org.sarge.jove.platform.vulkan.core.*;
-import org.sarge.jove.platform.vulkan.memory.*;
+import org.sarge.jove.platform.vulkan.memory.MemoryProperties;
 import org.sarge.jove.platform.vulkan.render.*;
 import org.sarge.jove.scene.*;
 import org.sarge.jove.util.MathsUtil;
@@ -39,22 +39,22 @@ public class CameraConfiguration {
 	}
 
 	@Bean
-	public ResourceBuffer uniform(LogicalDevice dev, AllocationService allocator) {
+	public ResourceBuffer uniform(LogicalDevice dev) {
 		final var props = new MemoryProperties.Builder<VkBufferUsageFlag>()
 				.usage(VkBufferUsageFlag.UNIFORM_BUFFER)
 				.required(VkMemoryProperty.HOST_VISIBLE)
 				.build();
 
 		final long len = Matrix.IDENTITY.length();
-		final VulkanBuffer buffer = VulkanBuffer.create(dev, allocator, len, props);
+		final VulkanBuffer buffer = VulkanBuffer.create(dev, len, props);
 		return new ResourceBuffer(buffer, VkDescriptorType.UNIFORM_BUFFER, 0);
 	}
 
 	@Bean
 	public Frame.Listener update(ResourceBuffer uniform) {
 		return () -> {
-			final Matrix tilt = new AxisAngle(Vector.X, MathsUtil.toRadians(-90)).matrix();
-			final Matrix rot = new AxisAngle(Vector.Y, MathsUtil.toRadians(120)).matrix();
+			final Matrix tilt = AxisAngle.of(Axis.X, MathsUtil.toRadians(-90)).matrix();
+			final Matrix rot = AxisAngle.of(Axis.Y, MathsUtil.toRadians(120)).matrix();
 			final Matrix model = rot.multiply(tilt);
 			final Matrix matrix = projection.multiply(cam.matrix()).multiply(model);
 			matrix.buffer(uniform.buffer());

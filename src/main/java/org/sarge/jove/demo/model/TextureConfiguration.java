@@ -8,7 +8,7 @@ import org.sarge.jove.platform.vulkan.core.*;
 import org.sarge.jove.platform.vulkan.core.Command.Pool;
 import org.sarge.jove.platform.vulkan.image.*;
 import org.sarge.jove.platform.vulkan.image.Image.Descriptor;
-import org.sarge.jove.platform.vulkan.memory.*;
+import org.sarge.jove.platform.vulkan.memory.MemoryProperties;
 import org.sarge.jove.platform.vulkan.pipeline.Barrier;
 import org.sarge.jove.platform.vulkan.util.FormatBuilder;
 import org.springframework.beans.factory.annotation.*;
@@ -26,7 +26,7 @@ public class TextureConfiguration {
 	}
 
 	@Bean
-	public View texture(AllocationService allocator, DataSource data, @Qualifier("graphics") Pool transfer) throws IOException {
+	public View texture(DataSource data, @Qualifier("graphics") Pool transfer) throws IOException {
 		final var loader = new ResourceLoaderAdapter<>(data, new NativeImageLoader());
 		final ImageData image = loader.load("chalet.jpg");
 
@@ -59,7 +59,7 @@ public class TextureConfiguration {
 		final Image texture = new DefaultImage.Builder()
 				.descriptor(descriptor)
 				.properties(props)
-				.build(dev, allocator);
+				.build(dev);
 
 		// Prepare texture
 		new Barrier.Builder()
@@ -73,7 +73,7 @@ public class TextureConfiguration {
 				.submit(transfer);
 
 		// Create staging buffer
-		final VulkanBuffer staging = VulkanBuffer.staging(dev, allocator, image.data());
+		final VulkanBuffer staging = VulkanBuffer.staging(dev, image.data());
 
 		// Copy staging to image
 		new ImageTransferCommand.Builder()

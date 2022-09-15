@@ -10,14 +10,13 @@ import org.sarge.jove.platform.obj.ObjectModelLoader;
 import org.sarge.jove.platform.vulkan.*;
 import org.sarge.jove.platform.vulkan.core.*;
 import org.sarge.jove.platform.vulkan.core.Command.Pool;
-import org.sarge.jove.platform.vulkan.memory.*;
+import org.sarge.jove.platform.vulkan.memory.MemoryProperties;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.annotation.*;
 
 @Configuration
 public class ModelConfiguration {
 	@Autowired private LogicalDevice dev;
-	@Autowired private AllocationService allocator;
 	@Autowired private Pool graphics;
 
 	@Bean
@@ -40,7 +39,7 @@ public class ModelConfiguration {
 
 	protected VulkanBuffer buffer(Bufferable data, VkBufferUsageFlag usage) {
 		// Create staging buffer
-		final VulkanBuffer staging = VulkanBuffer.staging(dev, allocator, data);
+		final VulkanBuffer staging = VulkanBuffer.staging(dev, data);
 
 		// Init buffer memory properties
 		final var props = new MemoryProperties.Builder<VkBufferUsageFlag>()
@@ -50,7 +49,7 @@ public class ModelConfiguration {
 				.build();
 
 		// Create buffer
-		final VulkanBuffer buffer = VulkanBuffer.create(dev, allocator, staging.length(), props);
+		final VulkanBuffer buffer = VulkanBuffer.create(dev, staging.length(), props);
 
 		// Copy staging to buffer
 		staging.copy(buffer).submit(graphics);
