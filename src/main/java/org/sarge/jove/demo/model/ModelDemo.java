@@ -56,7 +56,7 @@ public class ModelDemo {
 		return new DestructionAwareBeanPostProcessor() {
 			@Override
 			public void postProcessBeforeDestruction(Object bean, String beanName) throws BeansException {
-				if(bean instanceof TransientObject obj && obj.isDestroyed()) {
+				if(bean instanceof TransientObject obj && !obj.isDestroyed()) {
 					obj.destroy();
 				}
 			}

@@ -2,7 +2,7 @@ package org.sarge.jove.demo.model;
 
 import org.sarge.jove.control.Frame;
 import org.sarge.jove.geometry.*;
-import org.sarge.jove.geometry.Rotation.AxisAngle;
+import org.sarge.jove.geometry.Matrix.Matrix4;
 import org.sarge.jove.platform.desktop.*;
 import org.sarge.jove.platform.vulkan.*;
 import org.sarge.jove.platform.vulkan.core.*;
@@ -45,7 +45,7 @@ public class CameraConfiguration {
 				.required(VkMemoryProperty.HOST_VISIBLE)
 				.build();
 
-		final long len = Matrix.IDENTITY.length();
+		final long len = Matrix4.IDENTITY.length();
 		final VulkanBuffer buffer = VulkanBuffer.create(dev, len, props);
 		return new ResourceBuffer(buffer, VkDescriptorType.UNIFORM_BUFFER, 0);
 	}

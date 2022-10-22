@@ -4,7 +4,7 @@ import java.io.IOException;
 
 import org.sarge.jove.common.Rectangle;
 import org.sarge.jove.io.*;
-import org.sarge.jove.model.Model;
+import org.sarge.jove.model.Header;
 import org.sarge.jove.platform.vulkan.VkShaderStage;
 import org.sarge.jove.platform.vulkan.core.LogicalDevice;
 import org.sarge.jove.platform.vulkan.pipeline.*;
@@ -37,7 +37,7 @@ class PipelineConfiguration {
 	}
 
 	@Bean
-	public Pipeline pipeline(RenderPass pass, Swapchain swapchain, Shader vertex, Shader fragment, PipelineLayout pipelineLayout, Model model) {
+	public Pipeline pipeline(RenderPass pass, Swapchain swapchain, Shader vertex, Shader fragment, PipelineLayout pipelineLayout, Header model) {
 		final Rectangle viewport = new Rectangle(swapchain.extents());
 		return new Pipeline.Builder()
 				.layout(pipelineLayout)

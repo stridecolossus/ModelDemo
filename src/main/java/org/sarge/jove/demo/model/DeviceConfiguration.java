@@ -6,6 +6,7 @@ import org.sarge.jove.platform.vulkan.common.Queue;
 import org.sarge.jove.platform.vulkan.core.*;
 import org.sarge.jove.platform.vulkan.core.LogicalDevice.RequiredQueue;
 import org.sarge.jove.platform.vulkan.core.PhysicalDevice.Selector;
+import org.sarge.jove.platform.vulkan.render.Swapchain;
 import org.sarge.jove.platform.vulkan.util.*;
 import org.springframework.context.annotation.*;
 
@@ -34,7 +35,7 @@ class DeviceConfiguration {
 	@Bean
 	public LogicalDevice device(PhysicalDevice dev) {
 		return new LogicalDevice.Builder(dev)
-				.extension(VulkanLibrary.EXTENSION_SWAP_CHAIN)
+				.extension(Swapchain.EXTENSION)
 				.layer(ValidationLayer.STANDARD_VALIDATION)
 				.queue(new RequiredQueue(graphics.select(dev)))
 				.queue(new RequiredQueue(presentation.select(dev)))

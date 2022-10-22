@@ -20,21 +20,26 @@ public class ModelConfiguration {
 	@Autowired private Pool graphics;
 
 	@Bean
-	public static Model model(DataSource data) throws IOException {
+	public static BufferedModel model(DataSource data) throws IOException {
 		final var loader = new ResourceLoaderAdapter<>(data, new ModelLoader());
 		return loader.load("chalet.model");
 	}
 
 	@Bean
-	public VertexBuffer vbo(Model model) {
+	public static Header header(BufferedModel model) {
+		return model.header();
+	}
+
+	@Bean
+	public VertexBuffer vbo(BufferedModel model) {
 		final VulkanBuffer buffer = buffer(model.vertices(), VkBufferUsageFlag.VERTEX_BUFFER);
 		return new VertexBuffer(buffer);
 	}
 
 	@Bean
-	public VulkanBuffer index(Model model) {
+	public VulkanBuffer index(BufferedModel model) {
 		final VulkanBuffer buffer = buffer(model.index().get(), VkBufferUsageFlag.INDEX_BUFFER);
-		return new IndexBuffer(buffer, model.count());
+		return new IndexBuffer(buffer, model.header().count());
 	}
 
 	protected VulkanBuffer buffer(Bufferable data, VkBufferUsageFlag usage) {

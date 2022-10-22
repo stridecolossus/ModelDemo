@@ -16,7 +16,7 @@ class VulkanConfiguration {
 	public static Instance instance(VulkanLibrary lib, Desktop desktop, ApplicationConfiguration cfg) {
 		return new Instance.Builder()
 				.name(cfg.getTitle())
-				.extension(VulkanLibrary.EXTENSION_DEBUG_UTILS)
+				.extension(Handler.EXTENSION)
 				.extensions(desktop.extensions())
 				.layer(ValidationLayer.STANDARD_VALIDATION)
 				.build(lib);

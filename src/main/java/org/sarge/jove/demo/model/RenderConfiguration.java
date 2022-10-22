@@ -3,7 +3,7 @@ package org.sarge.jove.demo.model;
 import java.util.List;
 import java.util.concurrent.ScheduledExecutorService;
 
-import org.sarge.jove.model.Model;
+import org.sarge.jove.model.Header;
 import org.sarge.jove.platform.vulkan.*;
 import org.sarge.jove.platform.vulkan.core.*;
 import org.sarge.jove.platform.vulkan.image.*;
@@ -47,7 +47,7 @@ public class RenderConfiguration {
 	}
 
 	@Bean
-	static DrawCommand draw(Model model) {
+	static DrawCommand draw(Header model) {
 		return DrawCommand.of(model);
 	}
 
