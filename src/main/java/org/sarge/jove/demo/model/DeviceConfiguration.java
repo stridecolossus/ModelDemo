@@ -18,16 +18,16 @@ class DeviceConfiguration {
 
 	public DeviceConfiguration(Handle surface, ApplicationConfiguration cfg) {
 		this.presentation = Selector.of(surface);
-		this.features = DeviceFeatures.of(cfg.getFeatures());
+		this.features = DeviceFeatures.required(cfg.getFeatures());
 	}
 
 	@Bean
 	public PhysicalDevice physical(Instance instance) {
-		return new PhysicalDevice.Enumerator(instance)
-				.devices()
+		return PhysicalDevice
+				.devices(instance)
 				.filter(graphics)
 				.filter(presentation)
-				.filter(PhysicalDevice.Enumerator.features(features))
+				.filter(PhysicalDevice.predicate(features))
 				.findAny()
 				.orElseThrow(() -> new RuntimeException("No suitable physical device available"));
 	}

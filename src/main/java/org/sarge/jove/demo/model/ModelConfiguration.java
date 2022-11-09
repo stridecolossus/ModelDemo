@@ -11,6 +11,7 @@ import org.sarge.jove.platform.vulkan.*;
 import org.sarge.jove.platform.vulkan.core.*;
 import org.sarge.jove.platform.vulkan.core.Command.Pool;
 import org.sarge.jove.platform.vulkan.memory.MemoryProperties;
+import org.sarge.jove.platform.vulkan.render.IndexBuffer;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.annotation.*;
 
@@ -26,7 +27,7 @@ public class ModelConfiguration {
 	}
 
 	@Bean
-	public static Header header(BufferedModel model) {
+	public static Model.Header header(BufferedModel model) {
 		return model.header();
 	}
 

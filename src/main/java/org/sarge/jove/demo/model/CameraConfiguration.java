@@ -2,14 +2,13 @@ package org.sarge.jove.demo.model;
 
 import org.sarge.jove.control.Frame;
 import org.sarge.jove.geometry.*;
-import org.sarge.jove.geometry.Matrix.Matrix4;
 import org.sarge.jove.platform.desktop.*;
 import org.sarge.jove.platform.vulkan.*;
 import org.sarge.jove.platform.vulkan.core.*;
 import org.sarge.jove.platform.vulkan.memory.MemoryProperties;
 import org.sarge.jove.platform.vulkan.render.*;
 import org.sarge.jove.scene.*;
-import org.sarge.jove.util.MathsUtil;
+import org.sarge.jove.util.Trigonometric;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.annotation.*;
 
@@ -53,8 +52,8 @@ public class CameraConfiguration {
 	@Bean
 	public Frame.Listener update(ResourceBuffer uniform) {
 		return () -> {
-			final Matrix tilt = AxisAngle.of(Axis.X, MathsUtil.toRadians(-90)).matrix();
-			final Matrix rot = AxisAngle.of(Axis.Y, MathsUtil.toRadians(120)).matrix();
+			final Matrix tilt = Axis.X.rotation(Trigonometric.toRadians(-90));
+			final Matrix rot = Axis.Y.rotation(Trigonometric.toRadians(120));
 			final Matrix model = rot.multiply(tilt);
 			final Matrix matrix = projection.multiply(cam.matrix()).multiply(model);
 			matrix.buffer(uniform.buffer());
