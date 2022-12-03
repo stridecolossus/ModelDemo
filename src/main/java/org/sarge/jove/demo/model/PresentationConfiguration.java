@@ -22,12 +22,8 @@ class PresentationConfiguration {
 
 	@Bean
 	public Swapchain swapchain(LogicalDevice dev, Surface surface) {
-	    // Select presentation mode
 	    final VkPresentModeKHR mode = surface.mode(VkPresentModeKHR.MAILBOX_KHR);
-
-	    // Select SRGB surface format
 	    final VkSurfaceFormatKHR format = surface.format(VkFormat.B8G8R8_UNORM, VkColorSpaceKHR.SRGB_NONLINEAR_KHR, null);
-
 	    return new Swapchain.Builder(surface)
 				.count(cfg.getFrameCount())
 				.presentation(mode)

@@ -2,7 +2,6 @@ package org.sarge.jove.demo.model;
 
 import org.sarge.jove.common.Handle;
 import org.sarge.jove.platform.vulkan.VkQueueFlag;
-import org.sarge.jove.platform.vulkan.common.Queue;
 import org.sarge.jove.platform.vulkan.core.*;
 import org.sarge.jove.platform.vulkan.core.LogicalDevice.RequiredQueue;
 import org.sarge.jove.platform.vulkan.core.PhysicalDevice.Selector;
@@ -44,8 +43,8 @@ class DeviceConfiguration {
 	}
 
 	private static Command.Pool pool(LogicalDevice dev, Selector selector) {
-		final Queue.Family family = selector.select(dev.parent());
-		final Queue queue = dev.queue(family);
+		final WorkQueue.Family family = selector.select(dev.parent());
+		final WorkQueue queue = dev.queue(family);
 		return Command.Pool.create(dev, queue);
 	}
 

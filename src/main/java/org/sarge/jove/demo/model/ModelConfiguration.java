@@ -3,7 +3,7 @@ package org.sarge.jove.demo.model;
 import java.io.*;
 import java.nio.file.Paths;
 
-import org.sarge.jove.common.Bufferable;
+import org.sarge.jove.common.ByteSizedBufferable;
 import org.sarge.jove.io.*;
 import org.sarge.jove.model.*;
 import org.sarge.jove.platform.obj.ObjectModelLoader;
@@ -21,29 +21,24 @@ public class ModelConfiguration {
 	@Autowired private Pool graphics;
 
 	@Bean
-	public static BufferedModel model(DataSource data) throws IOException {
-		final var loader = new ResourceLoaderAdapter<>(data, new ModelLoader());
+	public static Mesh model(DataSource data) throws IOException {
+		final var loader = new ResourceLoaderAdapter<>(data, new MeshLoader());
 		return loader.load("chalet.model");
 	}
 
 	@Bean
-	public static Model.Header header(BufferedModel model) {
-		return model.header();
-	}
-
-	@Bean
-	public VertexBuffer vbo(BufferedModel model) {
+	public VertexBuffer vbo(BufferedMesh model) {
 		final VulkanBuffer buffer = buffer(model.vertices(), VkBufferUsageFlag.VERTEX_BUFFER);
 		return new VertexBuffer(buffer);
 	}
 
 	@Bean
-	public VulkanBuffer index(BufferedModel model) {
+	public VulkanBuffer index(BufferedMesh model) {
 		final VulkanBuffer buffer = buffer(model.index().get(), VkBufferUsageFlag.INDEX_BUFFER);
-		return new IndexBuffer(buffer, model.header().count());
+		return new IndexBuffer(buffer, model.count());
 	}
 
-	protected VulkanBuffer buffer(Bufferable data, VkBufferUsageFlag usage) {
+	protected VulkanBuffer buffer(ByteSizedBufferable data, VkBufferUsageFlag usage) {
 		// Create staging buffer
 		final VulkanBuffer staging = VulkanBuffer.staging(dev, data);
 
@@ -75,9 +70,9 @@ public class ModelConfiguration {
 
 		final DataSource src = FileDataSource.home(Paths.get("workspace/Demo/Data"));
 		final var loader = new ResourceLoaderAdapter<>(src, new ObjectModelLoader());
-		final Model model = loader.load("chalet.obj").iterator().next();
+		final DefaultMesh mesh = loader.load("chalet.obj").iterator().next();
 
-		final ModelLoader out = new ModelLoader();
-		out.save(model, new DataOutputStream(new FileOutputStream("/Users/Sarge/workspace/Demo/Data/chalet.model")));
+		final MeshLoader out = new MeshLoader();
+		out.save(mesh.buffer(), new DataOutputStream(new FileOutputStream("/Users/Sarge/workspace/Demo/Data/chalet.model")));
 	}
 }

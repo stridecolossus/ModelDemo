@@ -24,6 +24,6 @@ class VulkanConfiguration {
 
 	@Bean
 	static Handler diagnostics(Instance instance) {
-		return new Handler.Builder(instance).build();
+		return new Handler.Builder().build(instance);
 	}
 }

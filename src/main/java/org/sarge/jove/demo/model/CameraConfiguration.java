@@ -7,7 +7,8 @@ import org.sarge.jove.platform.vulkan.*;
 import org.sarge.jove.platform.vulkan.core.*;
 import org.sarge.jove.platform.vulkan.memory.MemoryProperties;
 import org.sarge.jove.platform.vulkan.render.*;
-import org.sarge.jove.scene.*;
+import org.sarge.jove.scene.core.*;
+import org.sarge.jove.scene.graph.*;
 import org.sarge.jove.util.Trigonometric;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.annotation.*;
@@ -44,8 +45,7 @@ public class CameraConfiguration {
 				.required(VkMemoryProperty.HOST_VISIBLE)
 				.build();
 
-		final long len = Matrix4.IDENTITY.length();
-		final VulkanBuffer buffer = VulkanBuffer.create(dev, len, props);
+		final VulkanBuffer buffer = VulkanBuffer.create(dev, Matrix4.LENGTH, props);
 		return new ResourceBuffer(buffer, VkDescriptorType.UNIFORM_BUFFER, 0);
 	}
 

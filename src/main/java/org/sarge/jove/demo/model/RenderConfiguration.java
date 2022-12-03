@@ -3,7 +3,7 @@ package org.sarge.jove.demo.model;
 import java.util.List;
 import java.util.concurrent.ScheduledExecutorService;
 
-import org.sarge.jove.model.Model;
+import org.sarge.jove.model.Mesh;
 import org.sarge.jove.platform.vulkan.*;
 import org.sarge.jove.platform.vulkan.core.*;
 import org.sarge.jove.platform.vulkan.image.*;
@@ -12,7 +12,8 @@ import org.sarge.jove.platform.vulkan.image.Image.Descriptor;
 import org.sarge.jove.platform.vulkan.memory.MemoryProperties;
 import org.sarge.jove.platform.vulkan.pipeline.*;
 import org.sarge.jove.platform.vulkan.render.*;
-import org.sarge.jove.scene.RenderLoop;
+import org.sarge.jove.platform.vulkan.render.Subpass.Reference;
+import org.sarge.jove.scene.core.RenderLoop;
 import org.springframework.context.annotation.*;
 
 @Configuration
@@ -47,7 +48,7 @@ public class RenderConfiguration {
 	}
 
 	@Bean
-	static DrawCommand draw(Model.Header model) {
+	static DrawCommand draw(Mesh model) {
 		return DrawCommand.of(model);
 	}
 
@@ -84,25 +85,10 @@ public class RenderConfiguration {
 
 	@Bean
 	public RenderPass pass(Swapchain swapchain) {
-		final Attachment col = new Attachment.Builder()
-				.format(swapchain.format())
-				.load(VkAttachmentLoadOp.CLEAR)
-				.store(VkAttachmentStoreOp.STORE)
-				.finalLayout(VkImageLayout.PRESENT_SRC_KHR)
-				.build();
-
-	    final Attachment depth = new Attachment.Builder()
-			    .format(format)
-			    .load(VkAttachmentLoadOp.CLEAR)
-			    .finalLayout(VkImageLayout.DEPTH_STENCIL_ATTACHMENT_OPTIMAL)
-			    .build();
-
-		return new RenderPass.Builder()
-				.subpass()
-					.colour(col)
-					.depth(depth, VkImageLayout.DEPTH_STENCIL_ATTACHMENT_OPTIMAL)
-					.build()
-				.build(dev);
+	    return new Subpass()
+	    		.colour(Attachment.colour(swapchain.format()))
+	    		.depth(new Reference(Attachment.depth(format), VkImageLayout.DEPTH_STENCIL_ATTACHMENT_OPTIMAL))
+	    		.create(dev);
 	}
 
 	@Bean
